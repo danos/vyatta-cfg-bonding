@@ -1,3 +1,9 @@
+vyatta-interfaces-bonding (0.39) unstable; urgency=medium
+
+  * DANOS Import master
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Thu, 07 Nov 2019 15:35:33 +0000
+
 vyatta-interfaces-bonding (0.36.2) unstable; urgency=medium
 
   * DANOS Import

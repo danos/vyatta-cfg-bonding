@@ -54,6 +54,9 @@ module vyatta-op-show-interfaces-bonding-v1 {
 
 		 Defines the top 'bonding' level under 'show interfaces' for operational CLI";
 
+	revision 2019-10-24 {
+		description "Filter out VRRP interfaces from opd:allowed output";
+	}
 	revision 2019-01-27 {
 		description "Initial version";
 	}
@@ -71,7 +74,7 @@ module vyatta-op-show-interfaces-bonding-v1 {
 			opd:argument if-name {
 				opd:help "Show specified bonding interface information";
 				opd:on-enter 'vyatta-show-interfaces.pl --intf="$4"';
-				opd:allowed 'vyatta-interfaces.pl --show bonding --filter-out="\.\d+$|v\d+$"';
+				opd:allowed 'vyatta-interfaces.pl --show bonding --filter-out="\.\d+$|v\d+$|vrrp"';
 				type string {
 					pattern 'dp[0-9]+bond[0-9]+';
 					opd:pattern-help '<dpNbondN>';
@@ -99,7 +102,7 @@ module vyatta-op-show-interfaces-bonding-v1 {
 					opd:argument vif {
 						opd:help "Show specified virtual network interface (vif) information";
 						opd:on-enter 'vyatta-show-interfaces.pl --intf="$4.$6"';
-						opd:allowed 'vyatta-interfaces.pl --show bonding --vif "$4" --filter-out="v\d+$"';
+						opd:allowed 'vyatta-interfaces.pl --show bonding --vif "$4" --filter-out="v\d+$|vrrp"';
 						type string {
 							pattern '[0-9]+';
 							opd:pattern-help '<N>';

@@ -1,0 +1,24 @@
+#!/bin/vcli -f
+#
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2014-2016 by Brocade Communications Systems, Inc.
+# All rights reserved.
+
+source "$(cd "$(dirname "${0}")" && pwd -P)"/../tech-support.functions
+
+header Bonding
+for bnd in $(/opt/vyatta/sbin/vyatta-interfaces.pl --show=bonding --filter-out=vrrp)
+	do header "Interface statistics for $bnd"
+
+	ids=($(echo "$bnd" | sed -Ee 's/^(.+)\.([0-9]+)?$/\1 \2/'))
+	if [ ${#ids[@]} == "2" ]; then
+		time_out "run show interfaces bonding ${ids[0]} vif ${ids[1]}"
+	else
+		time_out "run show interfaces bonding $bnd"
+		time_out "run show interfaces bonding $bnd slaves"
+		time_out "teamdctl $bnd state dump"
+	fi
+done
+
+header "Dataplane LAG state"
+time_out "vplsh -l -c lag"
