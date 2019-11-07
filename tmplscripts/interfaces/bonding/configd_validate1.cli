@@ -1,0 +1,2 @@
+#!/opt/vyatta/bin/cliexpr
+commit:expression: $VAR(mode/@) == "active-backup" || $VAR(primary/@) == "" ; "The bonding group mode must be active-backup to set a primary interface."

@@ -1,0 +1,6 @@
+#!/opt/vyatta/bin/cliexec
+if [[ -n "$VAR(mtu/@)" && "$VAR(mtu/@)" -lt 114 ]]
+then
+    echo "WARNING:MTU of bonding interface must be greater than or equal to 114"
+fi
+exit 0

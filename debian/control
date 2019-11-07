@@ -1,0 +1,60 @@
+Source: vyatta-interfaces-bonding
+Section: contrib/net
+Priority: extra
+Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+Build-Depends: debhelper (>= 9), dh-yang, autoconf, automake, autotools-dev, cpio, libjson-perl,
+ libipc-system-simple-perl,
+ libvyatta-cfg1,
+Standards-Version: 3.9.6
+
+Package: vyatta-interfaces-bonding
+Architecture: all
+Provides: vyatta-cfg-bonding
+Conflicts: vyatta-cfg-bonding
+Replaces: vyatta-cfg-bonding
+Depends: ${misc:Depends},
+ vplane-config (>> 2.19),
+ vyatta-cfg (>= 0.105.3),
+ vyatta-interfaces (>= 0.5),
+ vyatta-system,
+ libteam-utils (>= 1.11-1vyatta18),
+ libipc-system-simple-perl,
+ libvyatta-interface-perl (>= 1.44)
+Description: Vyatta interface link aggregation configuration
+ Vyatta interface link aggregation configuration utilities, templates and
+ scripts.
+
+Package: vyatta-interfaces-bonding-v1-yang
+Architecture: all
+Depends:
+ vyatta-interfaces-bonding (= ${binary:Version}),
+ vyatta-interfaces-dataplane-v1-yang (>= 2.13),
+ vyatta-update-vifs,
+ ${yang:Depends},
+ ${misc:Depends}
+Description: Vyatta interface bonding (LAG) type Yang model version 1
+ Vyatta interface bonding type (LAG) type Yang model version 1 package.
+
+Package: vyatta-interfaces-bonding-qos-v1-yang
+Architecture: all
+Depends:
+ vplane-config-qos (>= 1.2.0),
+ vyatta-cfg,
+ ${yang:Depends},
+ ${misc:Depends}
+Description: Yang module for bonding interface qos configuration
+ The YANG module for vyatta-interfaces-bonding-qos-v1
+
+Package: vyatta-interfaces-bonding-switch-v1-yang
+Architecture: all
+Depends:
+ ${yang:Depends},
+ ${misc:Depends}
+Description: YANG module for bonding interface switch configuration
+ This package adds support for bonding interfaces in switch groups.
+
+Package: vyatta-op-show-interfaces-bonding-v1-yang
+Architecture: all
+Depends: ${misc:Depends}, ${yang:Depends}, vyatta-interfaces-base, vyatta-interfaces-bonding
+Description: vyatta-op-show-interfaces-bonding-v1 module
+ Operational mode integration for viewing bonding interface configuration

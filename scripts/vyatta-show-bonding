@@ -1,0 +1,142 @@
+#!/usr/bin/perl
+#
+# Module: vyatta-show-interfaces.pl
+#
+# **** License ****
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# This code was originally developed by Vyatta, Inc.
+# Portions created by Vyatta are Copyright (C) 2008 Vyatta, Inc.
+# All Rights Reserved.
+#
+# Author: Stephen Hemminger
+# Date: September 2008
+# Description: Script to display bonding information
+#
+# **** End License ****
+#
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+use lib "/opt/vyatta/share/perl5/";
+use Getopt::Long;
+use Vyatta::Misc;
+use Vyatta::Interface;
+use Vyatta::InterfaceStats;
+use Vyatta::Bonding;
+
+use strict;
+use warnings;
+
+sub usage {
+    print "Usage: $0 --brief\n";
+    print "       $0 interface(s)\n";
+    exit 1;
+}
+
+sub get_state_link {
+    my $intf = shift;
+    my $state;
+    my $link = 'down';
+    my $flags = get_sysfs_value( $intf, 'flags' );
+
+    my $hex_flags = hex($flags);
+    if ( $hex_flags & 0x1 ) {    # IFF_UP
+        $state = 'up';
+        my $carrier = get_sysfs_value( $intf, 'carrier' );
+        if ( $carrier eq '1' ) {
+            $link = "up";
+        }
+    }
+    else {
+        $state = 'down';
+    }
+
+    return ( $state, $link );
+}
+
+my %MODE_NAMES = (
+	"lacp"		=> "802.3ad",
+	"activebackup"	=> "active-backup",
+	"loadbalance"   => "balanced",
+);
+
+sub show_brief {
+    my @interfaces = grep { /^dp[\d]+bond[\d]+$/ } getInterfaces();
+    my $format     = "%-12s %-22s %-8s %-6s %s\n";
+
+    printf $format, 'Interface', 'Mode', 'State', 'Link', 'Slaves';
+    foreach my $intf (sort @interfaces) {
+        my $mode = get_mode( $intf );
+        my ( $state, $link ) = get_state_link($intf);
+        my $slaves = get_slaves(  $intf );
+        printf $format, $intf, $MODE_NAMES{"$mode"}, $state, $link, 
+		$slaves ? join(' ', $slaves) : '';
+    }
+    exit 0;
+}
+
+sub show {
+    my @interfaces = @_;
+    my %valid_intf = map { $_ => 1 }
+        grep { /^dp[\d]+bond[\d]+$/ } getInterfaces();
+    my @invalid_intf = grep { not $valid_intf{$_} } @interfaces;
+    if (@invalid_intf) {
+        print "Device does not exist: ", join(", ", @invalid_intf), "\n";
+        exit 1;
+    }
+    #                 |0    |17   |28    |40   |51   |62  |68  |80
+    my $format     = "%-16s %-10s %-10s  %-10s %-10s %-5s %-12.12s\n";
+
+    printf $format, "Interface", "RX: bytes", "packets", "TX: bytes", "packets", "slctd", "LACP flags";
+    foreach my $intf (sort @interfaces) {
+        my @slaves = get_slaves( $intf );
+	next unless @slaves;
+
+	my @selected = get_selected( $intf );
+        my %lacp_details = get_lacp_details( $intf );
+
+        my @stat_vars = qw/rx_bytes rx_packets tx_bytes tx_packets/;
+        my %stat = get_intf_stats($intf, @stat_vars);
+        my %clear = get_clear_stats($intf, @stat_vars);
+
+        my @stats = map { get_counter_val( $clear{$_}, $stat{$_} ) }
+                        ( @stat_vars );
+
+        printf $format, $intf, @stats, "", "";
+
+        foreach my $slave (sort @slaves) {
+            my $sel_flag = "no";
+            foreach my $sel ( @selected ) {
+                $sel_flag = "yes" if ($sel eq $slave);
+            }
+
+            my %stat = get_intf_stats($slave, @stat_vars);
+            my %clear = get_clear_stats($slave, @stat_vars);
+
+            my @slave_stats = map { get_counter_val( $clear{$_}, $stat{$_} ) }
+				  ( @stat_vars );
+
+            printf $format, '    ' . $slave,
+              @slave_stats,
+              $sel_flag,
+              get_lacpdu_info_state($lacp_details{$slave}->{'state'});
+        }
+    }
+}
+
+my $brief;
+GetOptions( 'brief' => \$brief, ) or usage();
+
+show_brief() if ($brief);
+show(@ARGV);
+

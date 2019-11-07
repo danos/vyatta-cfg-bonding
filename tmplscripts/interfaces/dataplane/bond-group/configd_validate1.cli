@@ -1,0 +1,2 @@
+#!/opt/vyatta/bin/cliexpr
+commit:expression: exec "${vyatta_sbindir}/vyatta-bonding --dev=$VAR(@) --check=$VAR(../@)"

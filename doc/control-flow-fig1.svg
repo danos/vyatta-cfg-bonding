@@ -1,0 +1,290 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Creator: fig2dev Version 3.2 Patchlevel 5d -->
+<!-- CreationDate: Wed Aug  3 11:25:57 2016 -->
+<!-- Magnification: 1.000 -->
+<svg	xmlns="http://www.w3.org/2000/svg"
+	xmlns:xlink="http://www.w3.org/1999/xlink"
+	width="6.6in" height="6.0in"
+	viewBox="1167 2388 7866 7224">
+<g style="stroke-width:.025in; fill:none">
+<!-- Line: box -->
+<rect x="7800" y="2400" width="1200" height="1800" rx="0" 
+style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line: box -->
+<rect x="1200" y="2400" width="1200" height="1800" rx="0" 
+style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="1200,3000
+2400,3000
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+stroke-dasharray:30 30;"/>
+<!-- Line: box -->
+<rect x="7800" y="5400" width="1200" height="1800" rx="0" 
+style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line: box -->
+<rect x="5700" y="5400" width="1200" height="1200" rx="0" 
+style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line: box -->
+<rect x="3900" y="2400" width="1200" height="1800" rx="0" 
+style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line: box -->
+<rect x="2400" y="7500" width="5400" height="2100" rx="0" 
+style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="3000,7500
+3000,9600
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="1200,4800
+9000,4800
+" style="stroke:#000000;stroke-width:30;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="3900,2700
+2519,2700
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Arrowhead on XXXpoint 3900 2700 - 2385 2700-->
+<polygon points="2521 2670
+2401 2700
+2521 2730
+2521 2670
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Line -->
+<polyline points="2100,5281
+2100,4319
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Arrowhead on XXXpoint 2100 5400 - 2100 4185-->
+<polygon points="2130 4321
+2100 4201
+2070 4321
+2130 4321
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Arrowhead on XXXpoint 2100 4200 - 2100 5415-->
+<polygon points="2070 5279
+2100 5399
+2130 5279
+2070 5279
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Line -->
+<polyline points="2100,4200
+2100,3119
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+stroke-dasharray:10 30;"/>
+<!-- Arrowhead on XXXpoint 2100 4200 - 2100 2985-->
+<polygon points="2130 3121
+2100 3001
+2070 3121
+2130 3121
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:white;"/>
+<!-- Line -->
+<polyline points="7681,6900
+1500,6900
+1500,4319
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Arrowhead on XXXpoint 1500 6900 - 1500 4185-->
+<polygon points="1530 4321
+1500 4201
+1470 4321
+1530 4321
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Arrowhead on XXXpoint 1500 6900 - 7815 6900-->
+<polygon points="7679 6930
+7799 6900
+7679 6870
+7679 6930
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Line -->
+<polyline points="5700,6000
+4619,6000
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Arrowhead on XXXpoint 5700 6000 - 4485 6000-->
+<polygon points="4621 5970
+4501 6000
+4621 6030
+4621 5970
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Line -->
+<polyline points="5220,3900
+6000,3900
+6000,5280
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Arrowhead on XXXpoint 6000 3900 - 6000 5415-->
+<polygon points="5970 5279
+6000 5399
+6030 5279
+5970 5279
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Arrowhead on XXXpoint 6000 3900 - 5085 3900-->
+<polygon points="5221 3870
+5101 3900
+5221 3930
+5221 3870
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Line -->
+<polyline points="7800,6000
+7200,6000
+7200,3300
+5219,3300
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Arrowhead on XXXpoint 7200 3300 - 5085 3300-->
+<polygon points="5221 3270
+5101 3300
+5221 3330
+5221 3270
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Line -->
+<polyline points="4200,5400
+4200,4319
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Arrowhead on XXXpoint 4200 5400 - 4200 4185-->
+<polygon points="4230 4321
+4200 4201
+4170 4321
+4230 4321
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Line: box -->
+<rect x="1800" y="5400" width="2700" height="1200" rx="0" 
+style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Line -->
+<polyline points="7681,2700
+5219,2700
+" style="stroke:#000000;stroke-width:7;
+stroke-linejoin:miter; stroke-linecap:butt;
+"/>
+<!-- Arrowhead on XXXpoint 7800 2700 - 5085 2700-->
+<polygon points="5221 2670
+5101 2700
+5221 2730
+5221 2670
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Arrowhead on XXXpoint 5100 2700 - 7815 2700-->
+<polygon points="7679 2730
+7799 2700
+7679 2670
+7679 2730
+
+" style="stroke:#000000;stroke-width:7;stroke-miterlimit:8;
+fill:#000000;"/>
+<!-- Text -->
+<text xml:space="preserve" x="8400" y="3300" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="bold" font-size="144" text-anchor="middle">dataplane</text>
+<!-- Text -->
+<text xml:space="preserve" x="1800" y="3300" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="bold" font-size="144" text-anchor="middle">teamd</text>
+<!-- Text -->
+<text xml:space="preserve" x="1800" y="2700" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="middle">vplane</text>
+<!-- Text -->
+<text xml:space="preserve" x="1800" y="2940" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="middle">link watcher</text>
+<!-- Text -->
+<text xml:space="preserve" x="8400" y="6300" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="bold" font-size="144" text-anchor="middle">"net/core"</text>
+<!-- Text -->
+<text xml:space="preserve" x="6300" y="6000" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="bold" font-size="144" text-anchor="middle">ethtool</text>
+<!-- Text -->
+<text xml:space="preserve" x="4500" y="3300" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="bold" font-size="144" text-anchor="middle">vplaned</text>
+<!-- Text -->
+<text xml:space="preserve" x="2700" y="7800" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">1</text>
+<!-- Text -->
+<text xml:space="preserve" x="2700" y="8040" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">2</text>
+<!-- Text -->
+<text xml:space="preserve" x="2700" y="8280" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">3</text>
+<!-- Text -->
+<text xml:space="preserve" x="2700" y="8520" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">4</text>
+<!-- Text -->
+<text xml:space="preserve" x="2700" y="8760" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">5</text>
+<!-- Text -->
+<text xml:space="preserve" x="2700" y="9000" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">6</text>
+<!-- Text -->
+<text xml:space="preserve" x="2700" y="9240" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">7</text>
+<!-- Text -->
+<text xml:space="preserve" x="3300" y="7800" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">ZeroMQ encapsulated netlink</text>
+<!-- Text -->
+<text xml:space="preserve" x="3300" y="8040" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">ZeroMQ encapsulated LINKUP/LINKDOWN</text>
+<!-- Text -->
+<text xml:space="preserve" x="3300" y="8520" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">ioctl(SIOCETHTOOL)</text>
+<!-- Text -->
+<text xml:space="preserve" x="3300" y="8760" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">netdev notifier</text>
+<!-- Text -->
+<text xml:space="preserve" x="3300" y="9240" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">socket(AF_NETLINK, ..., NETLINK_GENERIC)</text>
+<!-- Text -->
+<text xml:space="preserve" x="3300" y="9000" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">socket(AF_NETLINK, ..., NETLINK_ROUTE)</text>
+<!-- Text -->
+<text xml:space="preserve" x="3300" y="8280" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">socket(AF_NETLINK, ..., NETLINK_ROUTE)</text>
+<!-- Text -->
+<text xml:space="preserve" x="3600" y="5100" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="bold" font-size="144" text-anchor="middle">kernel</text>
+<!-- Text -->
+<text xml:space="preserve" x="3000" y="6000" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="bold" font-size="144" text-anchor="middle">team.ko</text>
+<!-- Text -->
+<text xml:space="preserve" x="3600" y="4650" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="bold" font-size="144" text-anchor="middle">user</text>
+<!-- Text -->
+<text xml:space="preserve" x="6600" y="3150" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">3</text>
+<!-- Text -->
+<text xml:space="preserve" x="5700" y="3750" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">4</text>
+<!-- Text -->
+<text xml:space="preserve" x="5100" y="5850" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">5</text>
+<!-- Text -->
+<text xml:space="preserve" x="5100" y="6750" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">6</text>
+<!-- Text -->
+<text xml:space="preserve" x="2250" y="4650" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">7</text>
+<!-- Text -->
+<text xml:space="preserve" x="3300" y="2550" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">1</text>
+<!-- Text -->
+<text xml:space="preserve" x="6600" y="2550" fill="#000000"  font-family="Helvetica" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">2</text>
+</g>
+</svg>

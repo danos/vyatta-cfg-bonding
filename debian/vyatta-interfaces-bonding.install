@@ -1,0 +1,11 @@
+opt/vyatta/bin
+opt/vyatta/sbin
+opt/vyatta/share/vyatta-op
+opt/vyatta/share/perl5
+opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate1.cli
+opt/vyatta/share/tmplscripts/interfaces/bonding/vif/configd_validate1.cli
+opt/vyatta/share/tmplscripts/interfaces/bonding/configd_end.sh
+opt/vyatta/share/tmplscripts/interfaces/bonding/primary/configd_validate1.cli
+opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate2.cli
+opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate3.cli
+opt/vyatta/share/tmplscripts/interfaces/dataplane/bond-group/configd_validate1.cli

@@ -1,0 +1,3 @@
+vyatta-cfg-bonding: file-in-unusual-dir
+vyatta-cfg-bonding: dir-or-file-in-opt
+vyatta-cfg-bonding: unusual-interpreter

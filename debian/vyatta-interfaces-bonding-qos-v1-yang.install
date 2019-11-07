@@ -1,0 +1,3 @@
+yang/vyatta-interfaces-bonding-qos-v1.yang usr/share/configd/yang/
+opt/vyatta/share/tmplscripts/interfaces/bonding/policy/qos/configd_begin.sh
+opt/vyatta/share/tmplscripts/interfaces/bonding/policy/qos/configd_end.sh

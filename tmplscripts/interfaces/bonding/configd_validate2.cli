@@ -1,0 +1,4 @@
+#!/opt/vyatta/bin/cliexpr
+
+commit:expression: $VAR(mode/@) != "active-backup" || $VAR(primary/@) != "" \
+	; "Active-backup interfaces must have a configured primary."

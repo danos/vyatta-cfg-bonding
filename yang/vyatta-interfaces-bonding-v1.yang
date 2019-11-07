@@ -1,0 +1,274 @@
+module vyatta-interfaces-bonding-v1 {
+	namespace "urn:vyatta.com:mgmt:vyatta-interfaces-bonding:1";
+	prefix vyatta-interfaces-bonding-v1;
+
+	import vyatta-interfaces-vif-v2 {
+		prefix vif;
+	}
+	import vyatta-interfaces-v1 {
+		prefix if;
+	}
+	import vyatta-interfaces-dataplane-v1 {
+		prefix interfaces-dataplane;
+	}
+	import vyatta-types-v1 {
+		prefix types;
+	}
+	import configd-v1 {
+		prefix configd;
+	}
+	import vyatta-interfaces-dataplane-unnumbered-v1 {
+		prefix interfaces-dataplane-unnumbered;
+	}
+
+	organization "AT&T Inc.";
+	contact
+		"AT&T
+		 Postal: 208 S. Akard Street
+		 Dallas, TX 75202
+		 Web: www.att.com";
+
+	description
+		"Copyright (c) 2017-2019, AT&T Intellectual Property.
+		 All rights reserved.
+
+		 Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
+		 All rights reserved.
+
+		 Redistribution and use in source and binary forms, with or
+		 without modification, are permitted provided that the following
+		 conditions are met:
+
+		 1. Redistributions of source code must retain the above copyright
+			notice, this list of conditions and the following disclaimer.
+		 2. Redistributions in binary form must reproduce the above
+			copyright notice, this list of conditions and the following
+			disclaimer in the documentation and/or other materials provided
+			with the distribution.
+		 3. Neither the name of the copyright holder nor the names of its
+			contributors may be used to endorse or promote products derived
+			from this software without specific prior written permission.
+
+		 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+		 'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+		 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+		 FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+		 COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+		 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+		 BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+		 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+		 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+		 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+		 ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+		 POSSIBILITY OF SUCH DAMAGE.
+
+		 SPDX-License-Identifier: BSD-3-Clause
+
+		 Vyatta interface bonding type (LAG) type Yang model v1 package.";
+
+	revision 2019-06-18 {
+		description "Handle mtu updates via vyatta-interfaces script.";
+	}
+
+	revision 2018-10-09 {
+		description "Fix bonding ifname pattern.";
+	}
+
+	revision 2018-10-01 {
+		description "Add end action to handle vif updates";
+	}
+
+	revision 2018-03-22 {
+		description "Restrict interface name length.";
+	}
+
+	revision 2017-08-25 {
+		description
+			"Make use of vif:vlan-proto-group grouping.
+			 Add cpu-affinity leaf";
+	}
+
+	revision 2017-08-08 {
+		description "add new type for bonding interface name";
+	}
+
+	revision 2017-05-15 {
+		description "change configd priority from 400 to 319 for virtual bonding interface";
+	}
+
+	revision 2017-02-14 {
+		description "change minimum mtu from 68 to 106 for bonding interface";
+	}
+
+	revision 2016-07-19 {
+		description "change unnumbered validation scripts to match imported grouping";
+	}
+
+	revision 2016-05-24 {
+		description "extend MTU range";
+	}
+
+	revision 2016-04-25 {
+		description "add loadbalance LAG mode";
+	}
+
+	revision 2015-10-12 {
+		description "include vlan-protocol option";
+	}
+	revision 2015-08-05 {
+		description "Initial revision of version 1.";
+	}
+
+	typedef bonding-ifname {
+		type string {
+			length 1..15;
+			pattern 'dp[0-9]+bond([0-9]|[1-9][0-9]+)' {
+				error-message "bonding interface name must be of the form dpFbondN";
+			}
+			configd:pattern-help "<dpFbondN>";
+		}
+	}
+
+	augment /if:interfaces {
+		list bonding {
+			configd:priority "315";
+			configd:help "Bonding interface name";
+			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate1.cli";
+			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate2.cli";
+			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate3.cli";
+			configd:create "vyatta-bonding --create --dev=$VAR(@) --mode=$VAR(mode/@) --lacp_activity=$VAR(lacp-options/activity/@) --lacp_key=$VAR(lacp-options/key/@)";
+			configd:delete "vyatta-bonding --delete --dev=$VAR(@)";
+			configd:end "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_end.sh";
+			configd:end "vyatta-update-vifs $VAR(@)";
+			key "tagnode";
+			leaf tagnode {
+				type bonding-ifname;
+				configd:help "Bonding interface name";
+			}
+			uses vif:vlan-proto-group;
+			uses if:if-parameters;
+			uses vif:vif-group {
+				refine vif {
+					configd:priority "319";
+					configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate3.cli";
+				}
+			}
+			uses interfaces-dataplane:cpu-affinity;
+			leaf primary {
+				type string;
+				configd:priority "390";
+				configd:update "vyatta-bonding --dev=$VAR(../@) --primary=$VAR(@)";
+				configd:delete "vyatta-bonding --dev=$VAR(../@) --primary=!$VAR(@)";
+				configd:allowed "vyatta-bonding --dev=$VAR(../@) --list-configured-slaves";
+				configd:help "Primary device interface";
+				configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/primary/configd_validate1.cli";
+			}
+			leaf mode {
+				type enumeration {
+					enum "lacp" {
+						configd:help "IEEE 802.3ad Dynamic link aggregation (Default)";
+					}
+					enum "active-backup" {
+						configd:help "Fault tolerant: only one slave in the bond is active";
+					}
+					enum "balanced" {
+						configd:help "Aggregated bandwidth: all slaves in the bond are active";
+					}
+				}
+				default "lacp";
+				configd:help "Bonding mode";
+			}
+			container lacp-options {
+				configd:help "LACP mode specific options";
+				leaf activity {
+					type enumeration {
+						enum "active" {
+							configd:help "LACP active mode of operation";
+						}
+						enum "passive" {
+							configd:help "LACP passive mode of operation";
+						}
+					}
+					default "active";
+					configd:help "LACP activity mode of operation";
+				}
+				leaf key {
+					type uint16;
+					default "0";
+					configd:help "LACP aggregation (operational) key";
+				}
+			}
+			leaf mac {
+				type types:mac-address;
+				configd:help "Media Access Control (MAC) address";
+				configd:update "vyatta-interfaces.pl --dev $VAR(../@) --set-mac $VAR(@)";
+				configd:delete "vyatta-bonding --dev=$VAR(../@) --delete_mac=$VAR(@)";
+			}
+			leaf-list address {
+				type if:address-dhcp;
+				ordered-by "user";
+				configd:priority "320";
+				configd:help "IP address";
+				configd:create "vyatta-address add $VAR(../@) $VAR(@)";
+				configd:allowed "echo 'dhcp dhcpv6 <>'";
+			}
+			leaf mtu {
+				type uint32 {
+					range 68..9000;
+				}
+				configd:priority "381";
+				configd:help "Maximum Transmission Unit (MTU)";
+				default "1500";
+				configd:update "vyatta-interfaces.pl --dev $VAR(../@) --set-dev-mtu $VAR(@) --action ${COMMIT_ACTION}";
+				configd:delete "vyatta-interfaces.pl --dev $VAR(../@) --set-dev-mtu 1500 --action ${COMMIT_ACTION}";
+			}
+		}
+	}
+	augment /if:interfaces/interfaces-dataplane:dataplane {
+		leaf bond-group {
+			type bonding-ifname;
+			configd:priority "319";
+			configd:help "Assign interface to bonding group";
+			configd:allowed "echo $VAR(/interfaces/bonding/@@)";
+			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/dataplane/bond-group/configd_validate1.cli";
+			configd:update "vyatta-bonding --dev=$VAR(@) --add=$VAR(../@)";
+			configd:delete "vyatta-bonding --dev=$VAR(@) --remove=$VAR(../@)";
+		}
+	}
+	augment /if:interfaces/bonding/ip {
+		container unnumbered {
+			configd:help "Enable unnumbered IP";
+			configd:priority "330";
+			configd:end "/opt/vyatta/sbin/vyatta-update-unnumbered.pl --dev=$VAR(../../@)";
+			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/dataplane/unnumbered/unnumbered-vrf-check $VAR(../../@) $VAR(./donor-interface/@@) $VAR(/routing/routing-instance/@@)";
+			uses interfaces-dataplane-unnumbered:unnumbered-opts;
+		}
+	}
+	augment /if:interfaces/bonding/ipv6 {
+		container unnumbered {
+			configd:help "Enable unnumbered IPv6";
+			configd:priority "330";
+			configd:end "/opt/vyatta/sbin/vyatta-update-unnumbered.pl --dev=$VAR(../../@) --ipv6";
+			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/dataplane/unnumbered/unnumbered-vrf-check $VAR(../../@) $VAR(./donor-interface/@@) $VAR(/routing/routing-instance/@@)";
+			uses interfaces-dataplane-unnumbered:unnumbered-opts-ipv6;
+		}
+	}
+	augment /if:interfaces/bonding/vif/ip {
+		container unnumbered {
+			configd:help "Enable unnumbered IP";
+			configd:priority "430";
+			configd:end "/opt/vyatta/sbin/vyatta-update-unnumbered.pl --dev=$VAR(../../../@).$VAR(../../@)";
+			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/dataplane/unnumbered/unnumbered-vrf-check $VAR(../../../@).$VAR(../../@) $VAR(./donor-interface/@@) $VAR(/routing/routing-instance/@@)";
+			uses interfaces-dataplane-unnumbered:unnumbered-opts;
+		}
+	}
+	augment /if:interfaces/bonding/vif/ipv6 {
+		container unnumbered {
+			configd:help "Enable unnumbered IPv6";
+			configd:priority "430";
+			configd:end "/opt/vyatta/sbin/vyatta-update-unnumbered.pl --dev=$VAR(../../../@).$VAR(../../@) --ipv6";
+			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/dataplane/unnumbered/unnumbered-vrf-check $VAR(../../../@).$VAR(../../@) $VAR(./donor-interface/@@) $VAR(/routing/routing-instance/@@)";
+			uses interfaces-dataplane-unnumbered:unnumbered-opts-ipv6;
+		}
+	}
+}

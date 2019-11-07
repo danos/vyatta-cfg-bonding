@@ -1,0 +1,388 @@
+#!/usr/bin/perl
+#
+# **** License ****
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# A copy of the GNU General Public License is available as
+# `/usr/share/common-licenses/GPL' in the Debian GNU/Linux distribution
+# or on the World Wide Web at `http://www.gnu.org/copyleft/gpl.html'.
+# You can also obtain it by writing to the Free Software Foundation,
+# Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
+# MA 02110-1301, USA.
+#
+# This code was originally developed by Vyatta, Inc.
+# Portions created by Vyatta are Copyright (C) 2007 Vyatta, Inc.
+# All Rights Reserved.
+#
+# Author: Stephen Hemminger
+# Date: September 2008
+# Description: Script to setup bonding interfaces
+#
+# **** End License ****
+#
+# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+
+use lib "/opt/vyatta/share/perl5/";
+use Vyatta::Interface;
+use Vyatta::Config;
+use Vyatta::Bonding;
+use Getopt::Long;
+use IPC::System::Simple qw(capture);
+
+use strict;
+use warnings;
+
+sub touch {
+    my ( $file ) = @_;
+    my $fh;
+    open($fh, ">>", "$file")
+	or die "$file: Cannot open file: $!\n";
+    close($fh);
+}
+
+# Check if key defined in interface already in use
+sub check_key_in_use {
+    my $intf = shift;
+    my $cfg = new Vyatta::Config;
+    my $key = $cfg->returnValue("interfaces bonding $intf lacp-options key");
+
+    if (!$key) {
+        return 0;
+    }
+
+    # lacp-options key is set, so check the key
+    foreach my $bondif ($cfg->listNodes('interfaces bonding')) {
+        # no need to check itself
+        next if ( $bondif eq $intf );
+ 
+        if ($cfg->exists( 'interfaces bonding ' . $bondif .
+                          ' lacp-options key ' . $key) ) {
+            print "LACP aggregation key $key is already used";
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+sub create_if {
+    my ( $interface, $mode, $lacp_options ) = @_;
+    my $intf = $interface->name();
+    my $cfg = new Vyatta::Config;
+    my $is_configured = $cfg->isEffective("/interfaces/bonding/" . $intf);
+
+    # the bonding driver is not able to delete an interface, so just
+    # check if the interface has a configuration.
+    die "$intf: Device already exists" if $is_configured;
+
+    if ( check_key_in_use( $intf ) ) {
+        exit 1;
+    }
+
+    start_daemon( $intf, $mode, 'layer3+4', $lacp_options );
+    Vyatta::Interface::vrf_bind_one($intf);
+    if_up( $intf );
+
+    # to trigger the one-time handler in configd:end
+    touch( "/tmp/bonding_${intf}." . getppid() );
+}
+
+sub delete_if {
+    my ( $interface ) = @_;
+    my $intf = $interface->name();
+    die "$intf: Device not found" unless $interface->exists();
+
+    # There should not be any member links which are part
+    # of this bungle. If there is any, dataplane interface's
+    # validation script would have given the error during
+    # commit check.
+
+    if_down($intf) if $interface->up();
+    kill_daemon($intf);
+
+    #
+    # Because we use kill_daemon for configuration changes too we don't delete
+    # the device file there but need to take care of that here!
+    #
+    system("ip link delete $intf")
+        and die("$intf: Unable to delete device: $!");
+
+    return;
+}
+
+# Can't change mode when bond device is up and slaves are attached
+sub change_config {
+    my ( $interface, $mode, $lacp_options ) = @_;
+    my $intf = $interface->name();
+    die "$intf: Device not found" unless $interface->exists();
+
+    my $cfg = Vyatta::Config->new($interface->path());
+    my $is_changed = $cfg->isChanged("mode");
+    $is_changed ||= $cfg->isChanged("lacp-options activity");
+    $is_changed ||= $cfg->isChanged("lacp-options key");
+
+    # don't restart teamd unnecessarily.
+    return if not $is_changed;
+
+    if ( check_key_in_use( $intf ) ) {
+        exit 1;
+    }
+
+    my $bond_up = $interface->up();
+
+    if_down($intf) if ($bond_up);
+
+    # Remove all interfaces
+    my @slaves = get_slaves($intf);
+
+    foreach my $slave (@slaves) {
+	remove_slave( $intf, $slave );
+    }
+
+    my $origmode = $cfg->returnOrigValue("mode");
+    if ( "$mode" eq 'balanced' && "$origmode" eq 'lacp' ) {
+
+        # changing from lacp to balanced mode does not change kernel mode
+        # and leaves kernel driver assuming user carrier enabled.
+        # clear it by forcing an interim mode change to active-backup.
+        kill_daemon($intf);
+        system("teamnl $intf setoption mode activebackup")
+          and die("$intf: Unable to set interim activebackup mode: $!");
+    }
+    start_daemon( $intf, $mode, 'layer3+4', $lacp_options );
+
+    foreach my $slave ( @slaves ) {
+	add_slave( $intf, $slave );
+    }
+    if_up($intf) if ($bond_up);
+}
+
+# Consistency checks prior to commit
+sub commit_check {
+    my ( $interface, $slave ) = @_;
+    my $cfg = new Vyatta::Config;
+    my $intf = $interface->name();
+    my $is_configured = $cfg->exists("/interfaces/bonding/" . $intf);
+    die "Error: interface $slave belongs to nonexistent bond-group $intf\n"
+      unless $is_configured;
+
+    return unless eval 'use Vyatta::SwitchConfig qw(is_hw_interface); 1';
+
+    die "Error: can not add hardware-switched interface $slave to bond-group\n"
+	if (is_hw_interface($slave));
+
+    my $slaveif = new Vyatta::Interface($slave);
+    die "$slave: unknown interface type" unless $slaveif;
+    $cfg->setLevel($slaveif->path());
+
+    die "Error: can not add disabled interface $slave to bond-group $intf\n"
+	if $cfg->exists('disable');
+
+    die "Error: IP v4/v6 routing protocols cannot be configured on bond group members\n"
+        if (!have_all_default_values($cfg, "ip") or
+            !have_all_default_values($cfg, "ipv6") or
+            !have_all_default_values($cfg, "policy"));
+
+    die "Error: can not add slave interface with a provisioned MTU\n"
+        if (!have_all_default_values($cfg, "mtu"));
+
+    die "Error: can not add interface $slave that is part of bridge to bond-group\n"
+	if defined($cfg->returnValue("bridge-group bridge"));
+
+    my @addr = $cfg->returnValues('address');
+    die "Error: can not add interface $slave with addresses to bond-group\n"
+	if (@addr);
+
+    my @vif = $cfg->listNodes('vif');
+    die "Error: can not add interface $slave with VIF to bond-group\n"
+        if (@vif);
+
+    my @vrrp = $cfg->listNodes('vrrp vrrp-group');
+    die "Error: can not add interface $slave with VRRP to bond-group\n"
+	if (@vrrp);
+
+    die "Error: can not add slave interface with a provisioned vlan-protocol\n"
+        if (!have_all_default_values($cfg, 'vlan-protocol'));
+
+    $cfg->setLevel('interfaces pseudo-ethernet');
+    foreach my $peth ($cfg->listNodes()) {
+	my $link = $cfg->returnValue("$peth link");
+
+	die "Error: can not add interface $slave to bond-group already used by pseudo-ethernet $peth\n"
+	    if ($link eq $slave);
+    }
+}
+
+# bonding requires interface to be down before enslaving
+# but enslaving automatically brings interface up!
+sub add_port {
+    my ( $interface, $slave ) = @_;
+    my $cfg = new Vyatta::Config;
+    my $intf = $interface->name();
+    die "$intf: Device not found" unless $interface->exists();
+
+    my $slaveif = new Vyatta::Interface($slave);
+    die "$slave: unknown interface type" unless $slaveif;
+
+    $cfg->setLevel($slaveif->path());
+    my $old = $cfg->returnOrigValue('bond-group');
+
+    if_down($slave) if ($slaveif->up());
+    remove_slave($old, $slave) if $old;
+    add_slave ($intf, $slave);
+}
+
+sub remove_port {
+   my ( $interface, $slave ) = @_;
+   my $intf = $interface->name();
+   die "$intf: Device not found" unless $interface->exists();
+
+   remove_slave ($intf, $slave);
+   if_up ($slave);
+
+   system("restore-ipv6-address.pl", "$slave");
+}
+
+sub list_modes {
+    print STDOUT join( ' ', sort( get_bonding_modes() ) ), "\n";
+
+    exit 0;
+}
+
+sub list_slaves {
+    my ( $interface ) = @_;
+    my $intf = $interface->name();
+    die "$intf: Device not found" unless $interface->exists();
+
+    my @slaves = get_slaves($intf);
+    print STDOUT join(' ', @slaves), "\n";
+    exit 0;
+}
+
+sub list_configured_slaves {
+    my ( $interface ) = @_;
+    my $intf = $interface->name();
+    my $cfg = new Vyatta::Config;
+    my $is_configured = $cfg->exists("/interfaces/bonding/" . $intf);
+    die "$intf: Device not found" unless $is_configured;
+
+    my @slaves = ();
+
+    foreach my $dpintf ($cfg->listNodes('interfaces dataplane')) {
+        my $group = $cfg->returnValue('interfaces dataplane ' . $dpintf . ' bond-group');
+        if (defined($group)) {
+            if ($group eq $intf) {
+                push(@slaves, $dpintf);
+            }
+        }
+    }
+    print STDOUT join(' ', @slaves), "\n";
+    exit 0;
+}
+
+##
+## In active-backup mode this function changes the active port to $slave.
+##
+## NOTE: The arguments are already validated by the CLI via list_slaves().
+##
+sub change_primary {
+    my ( $interface, $slave ) = @_;
+    my $intf = $interface->name();
+    die "$intf: Device not found" unless $interface->exists();
+
+    my $cfg = Vyatta::Config->new();
+    $cfg->setLevel($interface->path());
+    my $old = $cfg->returnOrigValue('primary');
+    if ($old) {
+        set_priority( $intf, $old, 0 );
+
+        # deleting the primary starts with "!"
+        return if $slave =~ /^!$old/;
+    }
+
+    set_priority( $intf, $slave, 10 );
+    set_primary( $intf, $slave );
+}
+
+sub delete_mac {
+    my ( $interface, $delete_mac ) = @_;
+    my $intf = $interface->name();
+    die "$intf: Device not found" unless $interface->exists();
+ 
+    my @slaves = get_slaves($intf);
+
+    foreach my $slave (@slaves) {
+        my $slave_mac = (split ' ', capture('ethtool', '-P', $slave))[2];
+
+        # Bonding already has a good mac inherited from its slave so
+        # deleting its configured mac requires no mac change 
+        if ( lc($delete_mac) eq lc($slave_mac) ) {
+            return;
+        }
+    }
+
+    reset_mac($intf);
+}
+
+sub usage {
+    print "Usage: $0 --dev=bondX --mode={mode}\n";
+    print "       $0 --dev=bondX --add=ethX\n";
+    print "       $0 --dev=bondX --remove=ethX\n";
+    print print "modes := ", join( ',', sort( get_bonding_modes() ) ), "\n";
+
+    exit 1;
+}
+
+my ( $dev, $mode, %lacp_options, $add_port, $rem_port, $check, $opt_list_modes,
+     $opt_create, $opt_delete, $opt_list_slaves, $opt_primary_port,
+     $opt_list_configured_slaves, $delete_mac );
+
+GetOptions(
+    'dev=s'    => \$dev,
+    'mode=s'   => \$mode,
+    'lacp_activity:s' => \$lacp_options{activity},
+    'lacp_key:s' => \$lacp_options{key},
+    'add=s'    => \$add_port,
+    'remove=s' => \$rem_port,
+    'check=s'  => \$check,
+    'list-modes' => \$opt_list_modes,
+    'create'     => \$opt_create,
+    'delete'     => \$opt_delete,
+    'list-slaves' => \$opt_list_slaves,
+    'list-configured-slaves' => \$opt_list_configured_slaves,
+    'primary=s'  => \$opt_primary_port,
+    'delete_mac=s'  => \$delete_mac,
+) or usage();
+
+list_modes()			if $opt_list_modes;
+
+die "$0: device not specified\n" unless $dev;
+die "$0: --create and --delete are mutually exclusive\n" if $opt_create && $opt_delete;
+
+my $interface = new Vyatta::Interface($dev);
+die "$dev does not match any known interface name type\n" unless $interface;
+
+# default values if the Yang model passed empty variables (VRVDR-14313)
+$lacp_options{activity} ||= 'active';
+$lacp_options{key} ||= '0';
+
+commit_check( $interface, $check )   if $check;
+create_if( $interface, $mode, \%lacp_options )	if $mode && $opt_create;
+delete_if( $interface )		if $opt_delete;
+change_config( $interface, $mode, \%lacp_options )	if $mode && ! $opt_create;
+add_port( $interface, $add_port )	if $add_port;
+remove_port( $interface, $rem_port ) if $rem_port;
+list_slaves( $interface )		if $opt_list_slaves;
+list_configured_slaves( $interface )	if $opt_list_configured_slaves;
+change_primary( $interface, $opt_primary_port ) if $opt_primary_port;
+delete_mac( $interface, $delete_mac ) if $delete_mac;

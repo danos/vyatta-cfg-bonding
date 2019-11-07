@@ -1,0 +1,2 @@
+vyatta-interfaces-bonding-qos-v1 binary: file-in-unusual-dir opt/vyatta/share/tmplscripts/*
+vyatta-interfaces-bonding-qos-v1 binary: unusual-interpreter opt/vyatta/share/tmplscripts/*
