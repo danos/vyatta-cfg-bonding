@@ -66,6 +66,10 @@ module vyatta-interfaces-bonding-qos-v1 {
 
 		 The YANG module for vyatta-interfaces-bonding-qos-v1";
 
+	revision 2019-11-13 {
+	        description "Delete configd:begin and configd:end scripts for QoS VCI.";
+	}
+
 	revision 2016-04-27 {
 		description "Initial revision";
 	}
@@ -77,11 +81,6 @@ module vyatta-interfaces-bonding-qos-v1 {
 			}
 			configd:help "QoS policy for interface";
 		}
-	}
-
-	augment /if:interfaces/interfaces-bonding:bonding {
-		configd:begin "/opt/vyatta/share/tmplscripts/interfaces/bonding/policy/qos/configd_begin.sh";
-		configd:end "/opt/vyatta/share/tmplscripts/interfaces/bonding/policy/qos/configd_end.sh";
 	}
 
 	augment /if:interfaces/interfaces-bonding:bonding/interfaces-policy:policy {
