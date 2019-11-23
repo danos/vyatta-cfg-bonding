@@ -36,6 +36,7 @@ use lib "/opt/vyatta/share/perl5/";
 use Vyatta::Interface;
 use Vyatta::Config;
 use Vyatta::Bonding;
+use Vyatta::Platform qw(is_supported_platform_feature);
 use Getopt::Long;
 use IPC::System::Simple qw(capture);
 
@@ -178,8 +179,13 @@ sub commit_check {
 
     return unless eval 'use Vyatta::SwitchConfig qw(is_hw_interface); 1';
 
+    my $hw_members_only =
+      is_supported_platform_feature( "bonding.hardware-members-only",
+        undef, undef );
     die "Error: can not add hardware-switched interface $slave to bond-group\n"
-	if (is_hw_interface($slave));
+      if !$hw_members_only && is_hw_interface($slave);
+    die "Error: can not add software interface $slave to hardware bond-group\n"
+      if $hw_members_only && !is_hw_interface($slave);
 
     my $slaveif = new Vyatta::Interface($slave);
     die "$slave: unknown interface type" unless $slaveif;
