@@ -58,3 +58,11 @@ Architecture: all
 Depends: ${misc:Depends}, ${yang:Depends}, vyatta-interfaces-base, vyatta-interfaces-bonding
 Description: vyatta-op-show-interfaces-bonding-v1 module
  Operational mode integration for viewing bonding interface configuration
+
+Package: vyatta-interfaces-bonding-storm-control-v1-yang
+Architecture: all
+Depends:
+ ${yang:Depends},
+ ${misc:Depends}
+Description: YANG module for bonding interface storm-control configuration
+ This package adds support for storm-control on bonding interfaces.
