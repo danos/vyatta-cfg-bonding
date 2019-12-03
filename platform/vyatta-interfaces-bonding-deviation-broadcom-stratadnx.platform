@@ -1,0 +1,5 @@
+[Platform ufi.s9500-30xs]
+Yang=vyatta-interfaces-bonding-deviation-broadcom-stratadnx-v1.yang
+
+[Platform ufi.s9700-53dx]
+Yang=vyatta-interfaces-bonding-deviation-broadcom-stratadnx-v1.yang

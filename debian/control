@@ -30,6 +30,7 @@ Depends:
  vyatta-interfaces-bonding (= ${binary:Version}),
  vyatta-interfaces-dataplane-v1-yang (>= 2.13),
  vyatta-update-vifs,
+ vyatta-interfaces-bonding-deviation-broadcom-stratadnx-v1-yang,
  ${yang:Depends},
  ${misc:Depends}
 Description: Vyatta interface bonding (LAG) type Yang model version 1
@@ -66,3 +67,11 @@ Depends:
  ${misc:Depends}
 Description: YANG module for bonding interface storm-control configuration
  This package adds support for storm-control on bonding interfaces.
+
+Package: vyatta-interfaces-bonding-deviation-broadcom-stratadnx-v1-yang
+Architecture: all
+Depends:
+ ${yang:Depends},
+ ${misc:Depends}
+Description: Bonding interface YANG deviations for Broadcom StrataDNX platforms
+ Deviations to the bonding interfaces YANG for Broadcom StrataDNX platforms
