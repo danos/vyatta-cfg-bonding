@@ -131,6 +131,7 @@ sub change_config {
     my $is_changed = $cfg->isChanged("mode");
     $is_changed ||= $cfg->isChanged("lacp-options activity");
     $is_changed ||= $cfg->isChanged("lacp-options key");
+    $is_changed ||= $cfg->isChanged("minimum-links");
 
     # don't restart teamd unnecessarily.
     return if not $is_changed;
@@ -371,6 +372,7 @@ GetOptions(
     'list-configured-slaves' => \$opt_list_configured_slaves,
     'primary=s'  => \$opt_primary_port,
     'delete_mac=s'  => \$delete_mac,
+    'minimum-links=i'  => \$lacp_options{minlinks},
 ) or usage();
 
 list_modes()			if $opt_list_modes;

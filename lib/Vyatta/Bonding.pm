@@ -89,6 +89,8 @@ sub start_daemon {
         if ( $val eq 'lacp' and $lacp_options->{activity} eq 'passive' );
     $teamd_config{'runner'}{'lacp_key'} = int($lacp_options->{key})
         if ( $val eq 'lacp' and $lacp_options->{key});
+    $teamd_config{'runner'}{'min_ports'} = int($lacp_options->{minlinks})
+        if ( $val eq 'lacp' and $lacp_options->{minlinks});
     $teamd_config{'runner'}{'hwaddr_policy'} = 'only_active'
         if ( $val eq 'activebackup' );
     $teamd_config{'link_watch'}{'name'} = 'vplane';

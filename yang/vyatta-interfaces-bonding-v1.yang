@@ -66,6 +66,10 @@ module vyatta-interfaces-bonding-v1 {
 
 		 Vyatta interface bonding type (LAG) type Yang model v1 package.";
 
+	revision 2019-12-05 {
+		description "Add minimum-links option.";
+	}
+
 	revision 2019-06-18 {
 		description "Handle mtu updates via vyatta-interfaces script.";
 	}
@@ -136,7 +140,7 @@ module vyatta-interfaces-bonding-v1 {
 			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate1.cli";
 			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate2.cli";
 			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate3.cli";
-			configd:create "vyatta-bonding --create --dev=$VAR(@) --mode=$VAR(mode/@) --lacp_activity=$VAR(lacp-options/activity/@) --lacp_key=$VAR(lacp-options/key/@)";
+			configd:create "vyatta-bonding --create --dev=$VAR(@) --mode=$VAR(mode/@) --lacp_activity=$VAR(lacp-options/activity/@) --lacp_key=$VAR(lacp-options/key/@) --minimum-links=$VAR(minimum-links/@)";
 			configd:delete "vyatta-bonding --delete --dev=$VAR(@)";
 			configd:end "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_end.sh";
 			configd:end "vyatta-update-vifs $VAR(@)";
@@ -196,6 +200,22 @@ module vyatta-interfaces-bonding-v1 {
 					type uint16;
 					default "0";
 					configd:help "LACP aggregation (operational) key";
+				}
+			}
+			leaf minimum-links {
+				type uint8 {
+					range 1..255;
+				}
+				default "1";
+				configd:help "Minimum links to be up for interface to be link up";
+				must "current() = 1 or ../mode = 'lacp'" {
+					error-message "Mode must be lacp to set minimum-links to anything other than 1";
+				}
+				// Allow a bonding interface with no
+				// members, since the default
+				// minimum-links value is 1
+				must "current() = 1 or current() <= count(/if:interfaces/*[bond-group = current()/../tagnode])" {
+					error-message "Cannot set minimum-links to more than the number of member interfaces";
 				}
 			}
 			leaf mac {
