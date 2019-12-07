@@ -191,8 +191,11 @@ sub commit_check {
     die "$slave: unknown interface type" unless $slaveif;
     $cfg->setLevel($slaveif->path());
 
+    # Dataplane/DPDK bonding implementation doesn't allow disabled
+    # interfaces to be dealt with in a trivial way, so prevent this
+    # configuration. The FAL implementation does though.
     die "Error: can not add disabled interface $slave to bond-group $intf\n"
-	if $cfg->exists('disable');
+	if !is_hw_interface($slave) && $cfg->exists('disable');
 
     die "Error: IP v4/v6 routing protocols cannot be configured on bond group members\n"
         if (!have_all_default_values($cfg, "ip") or
