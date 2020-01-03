@@ -1,3 +1,19 @@
+vyatta-interfaces-bonding (0.40) unstable; urgency=medium
+
+  [ Alan Dewar ]
+  * QoS VCI: remove calls to qos-commit.pl script (Fixes: VRVDR-49148)
+
+  [ Robert Shearman ]
+  * scripts: allow adding hardware interfaces to bonding interfaces
+  * scripts: allow disabled hardware interfaces to be bonding members
+  * yang: add support for configuring storm-control
+  * yang: add deviations file for hardware platforms
+  * yang: add support for minimum-links configuration
+
+  [ Charles (Chas) Williams ]
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Fri, 03 Jan 2020 06:21:48 -0500
+
 vyatta-interfaces-bonding (0.39) unstable; urgency=medium
 
   * DANOS Import master
