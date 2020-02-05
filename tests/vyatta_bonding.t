@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w -I ../lib
 
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 # Copyright (c) 2014 by Brocade Communications Systems, Inc.
 # All rights reserved.
 #
@@ -128,6 +128,36 @@ sub mock_readpipe {
                     { activity => 'active', key => '0' }));
     is($mock_cmds{'index'}, 3);
     ok($mock_cmds{'cmd'}[2] eq '/usr/bin/teamd --team-dev dp0bond0 --daemon --no-quit-destroy --take-over --config {"link_watch":{"name":"vplane"},"runner":{"controller":"ipc:///var/run/vyatta/vplaned.pub","name":"lacp","tx_hash":["eth"]}}');
+}
+
+{
+    local %mock_cmds = mock_init();
+    local $current_cmd = \&mock_readpipe;
+
+    push(@{$mock_cmds{'text'}}, qq(0));
+    push(@{$mock_cmds{'text'}}, qq(0));
+
+    ok(start_daemon('dp0bond0', 'lacp', 'layer2',
+                    { activity => 'active', key => '0', rate => 'slow' }));
+    is($mock_cmds{'index'}, 3);
+    printf $mock_cmds{'cmd'}[2];
+    printf "\n";
+    ok($mock_cmds{'cmd'}[2] eq '/usr/bin/teamd --team-dev dp0bond0 --daemon --no-quit-destroy --take-over --config {"link_watch":{"name":"vplane"},"runner":{"controller":"ipc:///var/run/vyatta/vplaned.pub","fast_rate":false,"name":"lacp","tx_hash":["eth"]}}');
+}
+
+{
+    local %mock_cmds = mock_init();
+    local $current_cmd = \&mock_readpipe;
+
+    push(@{$mock_cmds{'text'}}, qq(0));
+    push(@{$mock_cmds{'text'}}, qq(0));
+
+    ok(start_daemon('dp0bond0', 'lacp', 'layer2',
+                    { activity => 'active', key => '0', rate => 'fast' }));
+    is($mock_cmds{'index'}, 3);
+    printf $mock_cmds{'cmd'}[2];
+    printf "\n";
+    ok($mock_cmds{'cmd'}[2] eq '/usr/bin/teamd --team-dev dp0bond0 --daemon --no-quit-destroy --take-over --config {"link_watch":{"name":"vplane"},"runner":{"controller":"ipc:///var/run/vyatta/vplaned.pub","fast_rate":true,"name":"lacp","tx_hash":["eth"]}}');
 }
 
 {

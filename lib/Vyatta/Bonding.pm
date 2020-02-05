@@ -1,4 +1,4 @@
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 # Copyright (c) 2014 by Brocade Communications Systems, Inc.
 # All rights reserved.
 #
@@ -87,6 +87,13 @@ sub start_daemon {
         if (("$val" eq 'lacp') || ("$val" eq 'balanced'));
     $teamd_config{'runner'}{'active'} = JSON::false
         if ( $val eq 'lacp' and $lacp_options->{activity} eq 'passive' );
+    if ($val eq 'lacp' and $lacp_options->{rate}) {
+        if ($lacp_options->{rate} eq 'fast') {
+            $teamd_config{'runner'}{'fast_rate'} = JSON::true;
+        } else {
+            $teamd_config{'runner'}{'fast_rate'} = JSON::false;
+        }
+    }
     $teamd_config{'runner'}{'lacp_key'} = int($lacp_options->{key})
         if ( $val eq 'lacp' and $lacp_options->{key});
     $teamd_config{'runner'}{'min_ports'} = int($lacp_options->{minlinks})

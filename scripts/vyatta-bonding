@@ -27,7 +27,7 @@
 #
 # **** End License ****
 #
-# Copyright (c) 2019, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-only
 #
@@ -131,6 +131,7 @@ sub change_config {
     my $is_changed = $cfg->isChanged("mode");
     $is_changed ||= $cfg->isChanged("lacp-options activity");
     $is_changed ||= $cfg->isChanged("lacp-options key");
+    $is_changed ||= $cfg->isChanged("lacp-options periodic-rate");
     $is_changed ||= $cfg->isChanged("minimum-links");
 
     # don't restart teamd unnecessarily.
@@ -362,6 +363,7 @@ GetOptions(
     'mode=s'   => \$mode,
     'lacp_activity:s' => \$lacp_options{activity},
     'lacp_key:s' => \$lacp_options{key},
+    'lacp_rate:s' => \$lacp_options{rate},
     'add=s'    => \$add_port,
     'remove=s' => \$rem_port,
     'check=s'  => \$check,
@@ -386,6 +388,7 @@ die "$dev does not match any known interface name type\n" unless $interface;
 # default values if the Yang model passed empty variables (VRVDR-14313)
 $lacp_options{activity} ||= 'active';
 $lacp_options{key} ||= '0';
+$lacp_options{rate} ||= 'slow';
 
 commit_check( $interface, $check )   if $check;
 create_if( $interface, $mode, \%lacp_options )	if $mode && $opt_create;

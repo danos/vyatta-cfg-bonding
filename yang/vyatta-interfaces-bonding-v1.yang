@@ -29,7 +29,7 @@ module vyatta-interfaces-bonding-v1 {
 		 Web: www.att.com";
 
 	description
-		"Copyright (c) 2017-2019, AT&T Intellectual Property.
+		"Copyright (c) 2017-2020, AT&T Intellectual Property.
 		 All rights reserved.
 
 		 Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
@@ -65,6 +65,10 @@ module vyatta-interfaces-bonding-v1 {
 		 SPDX-License-Identifier: BSD-3-Clause
 
 		 Vyatta interface bonding type (LAG) type Yang model v1 package.";
+
+	revision 2020-02-05 {
+		description "Add periodic-rate to lacp-option.";
+	}
 
 	revision 2019-12-05 {
 		description "Add minimum-links option.";
@@ -140,7 +144,7 @@ module vyatta-interfaces-bonding-v1 {
 			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate1.cli";
 			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate2.cli";
 			configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate3.cli";
-			configd:create "vyatta-bonding --create --dev=$VAR(@) --mode=$VAR(mode/@) --lacp_activity=$VAR(lacp-options/activity/@) --lacp_key=$VAR(lacp-options/key/@) --minimum-links=$VAR(minimum-links/@)";
+			configd:create "vyatta-bonding --create --dev=$VAR(@) --mode=$VAR(mode/@) --lacp_activity=$VAR(lacp-options/activity/@) --lacp_key=$VAR(lacp-options/key/@) --lacp_rate=$VAR(./lacp-options/periodic-rate/@) --minimum-links=$VAR(minimum-links/@)";
 			configd:delete "vyatta-bonding --delete --dev=$VAR(@)";
 			configd:end "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_end.sh";
 			configd:end "vyatta-update-vifs $VAR(@)";
@@ -200,6 +204,22 @@ module vyatta-interfaces-bonding-v1 {
 					type uint16;
 					default "0";
 					configd:help "LACP aggregation (operational) key";
+				}
+				leaf periodic-rate {
+					description "The periodic-rate option selects the periodic transmission timer
+						     used for LACPDU messages.";
+					configd:help "The periodic rate used for LACPDU messages.";
+					type enumeration {
+						enum "fast" {
+							description "Use fast (every 1s) periodic transmissions.";
+							configd:help "Use fast (every 1s) periodic transmissions.";
+						}
+						enum "slow" {
+							description "Use slow (every 30s) periodic transmissions.";
+							configd:help "Use slow (every 30s) periodic transmissions.";
+						}
+					}
+					default "slow";
 				}
 			}
 			leaf minimum-links {
