@@ -1,3 +1,9 @@
+vyatta-interfaces-bonding (0.41) unstable; urgency=medium
+
+  * Support configuration of the fast rate in bonding (Bugfix: VRVDR-49810)
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Thu, 06 Feb 2020 14:01:46 -0500
+
 vyatta-interfaces-bonding (0.40) unstable; urgency=medium
 
   [ Alan Dewar ]
