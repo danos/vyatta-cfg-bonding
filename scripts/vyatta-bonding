@@ -251,6 +251,12 @@ sub add_port {
     if_down($slave) if ($slaveif->up());
     remove_slave($old, $slave) if $old;
     add_slave ($intf, $slave);
+
+    # Deal with races between adding member and changing primary by
+    # performing that update here
+    $cfg->setLevel($interface->path());
+    change_primary($interface, $cfg->returnValue('primary')) if
+        $cfg->exists('primary') && $cfg->returnValue('primary') eq $slave;
 }
 
 sub remove_port {
@@ -301,6 +307,14 @@ sub list_configured_slaves {
     exit 0;
 }
 
+sub is_slave {
+    my ( $interface, $slave ) = @_;
+    my $intf = $interface->name();
+
+    return 1 if -d "/sys/class/net/$slave/upper_$intf";
+    return 0;
+}
+
 ##
 ## In active-backup mode this function changes the active port to $slave.
 ##
@@ -320,6 +334,11 @@ sub change_primary {
         # deleting the primary starts with "!"
         return if $slave =~ /^!$old/;
     }
+
+    # add_port can happen asynchronously and hasn't happened
+    # yet. Setting of primary port will happen when the member is
+    # added.
+    return if !is_slave( $interface, $slave );
 
     set_priority( $intf, $slave, 10 );
     set_primary( $intf, $slave );
