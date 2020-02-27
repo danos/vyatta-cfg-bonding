@@ -1,3 +1,13 @@
+vyatta-interfaces-bonding (0.42) unstable; urgency=medium
+
+  [ Robert Shearman ]
+  * scripts: fix race between adding member and setting primary interface
+    (Fixes: VRVDR-50025)
+
+  [ Charles (Chas) Williams ]
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Thu, 27 Feb 2020 10:49:05 -0500
+
 vyatta-interfaces-bonding (0.41) unstable; urgency=medium
 
   * Support configuration of the fast rate in bonding (Bugfix: VRVDR-49810)
