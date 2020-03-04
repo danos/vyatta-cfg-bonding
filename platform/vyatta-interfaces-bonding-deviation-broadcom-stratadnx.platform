@@ -3,3 +3,6 @@ Yang=vyatta-interfaces-bonding-deviation-broadcom-stratadnx-v1.yang
 
 [Platform ufi.s9700-53dx]
 Yang=vyatta-interfaces-bonding-deviation-broadcom-stratadnx-v1.yang
+
+[Platform accton.as5916-54xks]
+Yang=vyatta-interfaces-bonding-deviation-broadcom-stratadnx-v1.yang
