@@ -127,7 +127,7 @@ sub mock_readpipe {
     ok(start_daemon('dp0bond0', 'lacp', 'layer2',
                     { activity => 'active', key => '0' }));
     is($mock_cmds{'index'}, 3);
-    ok($mock_cmds{'cmd'}[2] eq '/usr/bin/teamd --team-dev dp0bond0 --daemon --no-quit-destroy --take-over --config {"link_watch":{"name":"vplane"},"runner":{"controller":"ipc:///var/run/vyatta/vplaned.pub","name":"lacp","tx_hash":["eth"]}}');
+    ok($mock_cmds{'cmd'}[2] eq '/usr/bin/teamd --team-dev dp0bond0 --daemon --no-quit-destroy --take-over --config {"link_watch":{"name":"ethtool"},"runner":{"name":"lacp","tx_hash":["eth"]}}');
 }
 
 {
@@ -142,7 +142,7 @@ sub mock_readpipe {
     is($mock_cmds{'index'}, 3);
     printf $mock_cmds{'cmd'}[2];
     printf "\n";
-    ok($mock_cmds{'cmd'}[2] eq '/usr/bin/teamd --team-dev dp0bond0 --daemon --no-quit-destroy --take-over --config {"link_watch":{"name":"vplane"},"runner":{"controller":"ipc:///var/run/vyatta/vplaned.pub","fast_rate":false,"name":"lacp","tx_hash":["eth"]}}');
+    ok($mock_cmds{'cmd'}[2] eq '/usr/bin/teamd --team-dev dp0bond0 --daemon --no-quit-destroy --take-over --config {"link_watch":{"name":"ethtool"},"runner":{"fast_rate":false,"name":"lacp","tx_hash":["eth"]}}');
 }
 
 {
@@ -157,7 +157,7 @@ sub mock_readpipe {
     is($mock_cmds{'index'}, 3);
     printf $mock_cmds{'cmd'}[2];
     printf "\n";
-    ok($mock_cmds{'cmd'}[2] eq '/usr/bin/teamd --team-dev dp0bond0 --daemon --no-quit-destroy --take-over --config {"link_watch":{"name":"vplane"},"runner":{"controller":"ipc:///var/run/vyatta/vplaned.pub","fast_rate":true,"name":"lacp","tx_hash":["eth"]}}');
+    ok($mock_cmds{'cmd'}[2] eq '/usr/bin/teamd --team-dev dp0bond0 --daemon --no-quit-destroy --take-over --config {"link_watch":{"name":"ethtool"},"runner":{"fast_rate":true,"name":"lacp","tx_hash":["eth"]}}');
 }
 
 {

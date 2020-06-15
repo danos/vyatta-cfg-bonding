@@ -82,7 +82,6 @@ sub start_daemon {
 
     my %teamd_config = ();
     $teamd_config{'runner'}{'name'} = "$val";
-    $teamd_config{'runner'}{'controller'} = "ipc:///var/run/vyatta/vplaned.pub";
     $teamd_config{'runner'}{'tx_hash'} = $policy
         if (("$val" eq 'lacp') || ("$val" eq 'balanced'));
     $teamd_config{'runner'}{'active'} = JSON::false
@@ -100,7 +99,7 @@ sub start_daemon {
         if ( $val eq 'lacp' and $lacp_options->{minlinks});
     $teamd_config{'runner'}{'hwaddr_policy'} = 'only_active'
         if ( $val eq 'activebackup' );
-    $teamd_config{'link_watch'}{'name'} = 'vplane';
+    $teamd_config{'link_watch'}{'name'} = 'ethtool';
 
     my $json = JSON->new();
     $json->canonical();
