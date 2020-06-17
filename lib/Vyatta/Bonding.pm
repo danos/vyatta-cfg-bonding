@@ -20,8 +20,8 @@ our(@EXPORT, @ISA);
 BEGIN {
     require Exporter;
     @ISA = qw(Exporter);
-    @EXPORT = qw(get_bonding_modes kill_daemon start_daemon get_slaves
-                 set_primary set_priority add_slave remove_slave if_down if_up
+    @EXPORT = qw(get_bonding_modes kill_daemon start_daemon get_members
+                 set_primary set_priority add_member remove_member if_down if_up
                  get_lacp_details get_lacpdu_info_state get_mode get_selected
                  have_all_default_values reset_mac);
 }
@@ -112,12 +112,12 @@ sub start_daemon {
     1;
 }
 
-sub get_slaves {
+sub get_members {
     my ( $intf ) = @_;
 
     my $json =
       capture( EXIT_ANY, "teamdctl $intf config dump actual 2>/dev/null" );
-    die "$intf: Cannot get slaves: $!\n" if ( $? != 0 );
+    die "$intf: Cannot get members $!\n" if ( $? != 0 );
 
     my $decoded = decode_json($json);
     my $ports = $decoded->{'ports'};
@@ -224,16 +224,16 @@ sub set_priority {
         and die "$intf: Cannot update configuration of port $port: $!\n";
 }
 
-sub add_slave {
-    my ( $intf, $slave ) = @_;
-    system("ip link set dev $slave master $intf")
-	and die "$intf: Cannot add $slave: $!\n";
+sub add_member {
+    my ( $intf, $member ) = @_;
+    system("ip link set dev $member master $intf")
+	and die "$intf: Cannot add $member: $!\n";
 }
 
-sub remove_slave {
-    my ( $intf, $slave ) = @_;
-    system("ip link set dev $slave nomaster")
-	and die "$intf: Cannot remove $slave: $!\n";
+sub remove_member {
+    my ( $intf, $member ) = @_;
+    system("ip link set dev $member nomaster")
+	and die "$intf: Cannot remove $member: $!\n";
 }
 
 sub if_down {
@@ -291,15 +291,15 @@ sub reset_mac {
     die "$intf: not a bonded interface\n"
       if !is_bond_intf($intf);
 
-    my @slaves = get_slaves($intf);
+    my @members = get_members($intf);
 
-    if (@slaves) {
-        my $slave = shift @slaves;
-        my $json = capture('ethtool', '-P', $slave);
-        die "$intf: Cannot get $slave mac: $!\n" if ( $? != 0 );
-        my $slave_mac = (split ' ', capture('ethtool', '-P', $slave))[2];
+    if (@members) {
+        my $member = shift @members;
+        my $json = capture('ethtool', '-P', $member);
+        die "$intf: Cannot get $member mac: $!\n" if ( $? != 0 );
+        my $member_mac = (split ' ', capture('ethtool', '-P', $member))[2];
 
-        system("ip link set dev $intf address $slave_mac")
+        system("ip link set dev $intf address $member_mac")
         and die "$intf: Cannot reset $intf mac: $!";
     }
 }

@@ -47,7 +47,7 @@ has started:
 Wireshark
 ---------
 
-To capture the LACP traffic on the slave interfaces either use tshark on
+To capture the LACP traffic on the member interfaces either use tshark on
 the vRouter itself or wireshark on the (virtual) host interfaces:
 
     # tshark -i dp0s7 -V ether dst 01:80:c2:00:00:02

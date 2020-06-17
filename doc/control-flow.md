@@ -26,7 +26,7 @@ One side effect of this is LAG interfaces have no shadows in the
 dataplane.
 The kernel has already created a logical ethernet device that can,
 for example, have addresses assigned.
-Slave interfaces in that aggregation must be "dataplane" interfaces,
+Member interfaces in that aggregation must be "dataplane" interfaces,
 which already have shadows and this is still how slow-path traffic is
 sent to/from the kernel for that particular aggregation.
 
@@ -44,7 +44,7 @@ messages for LAG interfaces less than straightforward.
 
 ![Fig. 1](control-flow-fig1.svg)
 
-### Master interface creation
+### Aggregate interface creation
 
 Starting teamd will send an RTM_NEWLINK message to the kernel with the
 IFLA_INFO_KIND attribute set to "team".
@@ -54,36 +54,36 @@ message which the controller receives and forwards to the dataplane for
 processing.
 
 Teamd will follow this with additional messages sent to the kernel that
-set the master's MAC address and some team genetlink options list
+set the aggregate's MAC address and some team genetlink options list
 messages (TEAM_ATTR_LIST_OPTION) to set the LAG mode, hash function, etc.
 All of these are, if successful, echoed by the kernel as multicast
 messages which the controller also receives and forwards to the dataplane.
 
-### Slave interface addition/removal
+### Member interface addition/removal
 
 In the vRouter these events are triggered with the "ip link set
 ... [no]master" commands which generate the appropriate RTM_NEWLINK
 messages.
 
 After the team kernel module notifies the team daemon that one or more
-slaves have been added by sending a team genetlink message containing
+members have been added by sending a team genetlink message containing
 a port list (TEAM_ATTR_LIST_PORT).
 The dataplane also receives these messages from the controller and
-these port lists, instead of the RTM_{NEW,DEL}LINK messages, trigger slave
+these port lists, instead of the RTM_{NEW,DEL}LINK messages, trigger member
 addition/removal in the bonding driver.
 Although the controller has no way to enforce a particular message
 ordering of a mixture of RTM_{NEW,DEL}LINK and team genetlink messages (they
 arrive on different sockets), the order of team genetlink messages on
 their own is preserved.
-This is the reason that port lists are used to add slaves; when using
-port lists for this a slave is guaranteed to be added before any options,
+This is the reason that port lists are used to add members; when using
+port lists for this a member is guaranteed to be added before any options,
 such as "enabled", are applied to it AND it is guaranteed that no options
-will be applied after the slave is removed.
-No options are inadvertantly discarded for lack of a target slave device.
+will be applied after the member is removed.
+No options are inadvertantly discarded for lack of a target member device.
 
-### Slave Interface Link State Change
+### Member Interface Link State Change
 
-When a change in link state occurs, the slave interface raises an
+When a change in link state occurs, the member interface raises an
 interrupt which is signaled to the dataplane through an eventfd.
 There are _two_ watchers of these events in the dataplane.
 
@@ -113,7 +113,7 @@ subsystem.
     s.m. flags (distributing and collecting) based on the value.
 
 1. The DPDK bonding driver also registers a callback for LSC notifications.
-Link state determines which slave interfaces are active, and therefor
+Link state determines which member interfaces are active, and therefor
 which interfaces are used for transmit.
 This means that the bonding driver _does not wait for the RTM_NEWLINK
 notification without IFF_RUNNING_ to stop using a down interface.

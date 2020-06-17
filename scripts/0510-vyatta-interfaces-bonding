@@ -15,7 +15,7 @@ for bnd in $(/opt/vyatta/sbin/vyatta-interfaces.pl --show=bonding --filter-out=v
 		time_out "run show interfaces bonding ${ids[0]} vif ${ids[1]}"
 	else
 		time_out "run show interfaces bonding $bnd"
-		time_out "run show interfaces bonding $bnd slaves"
+		time_out "run show interfaces bonding $bnd members"
 		time_out "teamdctl $bnd state dump"
 	fi
 done

@@ -39,6 +39,7 @@ use warnings;
 
 sub usage {
     print "Usage: $0 --brief\n";
+    print "       $0 --brief_legacy(s)\n";
     print "       $0 interface(s)\n";
     exit 1;
 }
@@ -74,13 +75,28 @@ sub show_brief {
     my @interfaces = grep { /^dp[\d]+bond[\d]+$/ } getInterfaces();
     my $format     = "%-12s %-22s %-8s %-6s %s\n";
 
+    printf $format, 'Interface', 'Mode', 'State', 'Link', 'Members';
+    foreach my $intf (sort @interfaces) {
+        my $mode = get_mode( $intf );
+        my ( $state, $link ) = get_state_link($intf);
+        my $members = get_members(  $intf );
+        printf $format, $intf, $MODE_NAMES{"$mode"}, $state, $link, 
+		$members ? join(' ', $members) : '';
+    }
+    exit 0;
+}
+
+sub show_brief_legacy {
+    my @interfaces = grep { /^dp[\d]+bond[\d]+$/ } getInterfaces();
+    my $format     = "%-12s %-22s %-8s %-6s %s\n";
+
     printf $format, 'Interface', 'Mode', 'State', 'Link', 'Slaves';
     foreach my $intf (sort @interfaces) {
         my $mode = get_mode( $intf );
         my ( $state, $link ) = get_state_link($intf);
-        my $slaves = get_slaves(  $intf );
+        my $members = get_members(  $intf );
         printf $format, $intf, $MODE_NAMES{"$mode"}, $state, $link, 
-		$slaves ? join(' ', $slaves) : '';
+		$members ? join(' ', $members) : '';
     }
     exit 0;
 }
@@ -99,8 +115,8 @@ sub show {
 
     printf $format, "Interface", "RX: bytes", "packets", "TX: bytes", "packets", "slctd", "LACP flags";
     foreach my $intf (sort @interfaces) {
-        my @slaves = get_slaves( $intf );
-	next unless @slaves;
+        my @members = get_members( $intf );
+	next unless @members;
 
 	my @selected = get_selected( $intf );
         my %lacp_details = get_lacp_details( $intf );
@@ -114,29 +130,34 @@ sub show {
 
         printf $format, $intf, @stats, "", "";
 
-        foreach my $slave (sort @slaves) {
+        foreach my $member (sort @members) {
             my $sel_flag = "no";
             foreach my $sel ( @selected ) {
-                $sel_flag = "yes" if ($sel eq $slave);
+                $sel_flag = "yes" if ($sel eq $member);
             }
 
-            my %stat = get_intf_stats($slave, @stat_vars);
-            my %clear = get_clear_stats($slave, @stat_vars);
+            my %stat = get_intf_stats($member, @stat_vars);
+            my %clear = get_clear_stats($member, @stat_vars);
 
-            my @slave_stats = map { get_counter_val( $clear{$_}, $stat{$_} ) }
+            my @member_stats = map { get_counter_val( $clear{$_}, $stat{$_} ) }
 				  ( @stat_vars );
 
-            printf $format, '    ' . $slave,
-              @slave_stats,
+            printf $format, '    ' . $member,
+              @member_stats,
               $sel_flag,
-              get_lacpdu_info_state($lacp_details{$slave}->{'state'});
+              get_lacpdu_info_state($lacp_details{$member}->{'state'});
         }
     }
 }
 
 my $brief;
-GetOptions( 'brief' => \$brief, ) or usage();
+my $brief_legacy;
+GetOptions(
+    'brief' => \$brief,
+    'brief_legacy' => \$brief_legacy,
+) or usage();
 
 show_brief() if ($brief);
+show_brief_legacy() if ($brief_legacy);
 show(@ARGV);
 

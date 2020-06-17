@@ -78,8 +78,8 @@ sub mock_readpipe {
 });
     };
 
-    my @got = get_slaves('dp0bond0');
-    is(scalar @got, 0, "empty get_slaves() returns zero");
+    my @got = get_members('dp0bond0');
+    is(scalar @got, 0, "empty get_members() returns zero");
 }
 
 {
@@ -111,10 +111,10 @@ sub mock_readpipe {
 });
     };
 
-    my @got = get_slaves('dp0bond0');
+    my @got = get_members('dp0bond0');
     my @expected = ('dp0p5p1', 'dp0port1');
     is_deeply([sort @got], [sort @expected],
-	      "get_slaves() returns the correct slaves");
+	      "get_members() returns the correct members");
 }
 
 {

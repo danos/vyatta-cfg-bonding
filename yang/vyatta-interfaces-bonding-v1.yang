@@ -66,6 +66,10 @@ module vyatta-interfaces-bonding-v1 {
 
 		 Vyatta interface bonding type (LAG) type Yang model v1 package.";
 
+	revision 2020-06-17 {
+		description "Cleanup potentially offensive language.";
+	}
+
 	revision 2020-02-05 {
 		description "Add periodic-rate to lacp-option.";
 	}
@@ -167,7 +171,7 @@ module vyatta-interfaces-bonding-v1 {
 				configd:priority "390";
 				configd:update "vyatta-bonding --dev=$VAR(../@) --primary=$VAR(@)";
 				configd:delete "vyatta-bonding --dev=$VAR(../@) --primary=!$VAR(@)";
-				configd:allowed "vyatta-bonding --dev=$VAR(../@) --list-configured-slaves";
+				configd:allowed "vyatta-bonding --dev=$VAR(../@) --list-configured-members";
 				configd:help "Primary device interface";
 				configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/primary/configd_validate1.cli";
 			}
@@ -177,10 +181,10 @@ module vyatta-interfaces-bonding-v1 {
 						configd:help "IEEE 802.3ad Dynamic link aggregation (Default)";
 					}
 					enum "active-backup" {
-						configd:help "Fault tolerant: only one slave in the bond is active";
+						configd:help "Fault tolerant: only one member in the bond is active";
 					}
 					enum "balanced" {
-						configd:help "Aggregated bandwidth: all slaves in the bond are active";
+						configd:help "Aggregated bandwidth: all members in the bond are active";
 					}
 				}
 				default "lacp";

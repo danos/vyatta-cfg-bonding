@@ -1,3 +1,3 @@
 #!/opt/vyatta/bin/cliexpr
 commit:expression: $VAR(../mode/@) == "active-backup" ; "The bonding group mode must be active-backup to set a primary interface."
-commit:expression: exec "vyatta-bonding --dev=$VAR(../@) --list-configured-slaves | grep -q $VAR(@)" ; "Primary slave interface must be part of the bonding group"
+commit:expression: exec "vyatta-bonding --dev=$VAR(../@) --list-configured-members | grep -q $VAR(@)" ; "Primary member interface must be part of the bonding group"
