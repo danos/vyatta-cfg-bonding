@@ -1,2 +1,2 @@
-usr/share/configd/yang/vyatta-interfaces-bonding-deviation-broadcom-stratadnx-v1.yang lib/vyatta-platform/yang
+yang-platform/vyatta-interfaces-bonding-deviation-broadcom-stratadnx-v1.yang lib/vyatta-platform/yang
 platform/vyatta-interfaces-bonding-deviation-broadcom-stratadnx.platform lib/vyatta-platform/platforms
