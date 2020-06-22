@@ -1,3 +1,11 @@
+vyatta-interfaces-bonding (0.44) unstable; urgency=medium
+
+  * Cleanup potentially offensive language (Bugfix: VRVDR-51641)
+  * yang: relocate platform deviations
+  * Stop using vplane link_watch (Bugfix: VRVDR-51623)
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Mon, 22 Jun 2020 10:33:34 -0400
+
 vyatta-interfaces-bonding (0.43) unstable; urgency=medium
 
   [ Robert Shearman ]
