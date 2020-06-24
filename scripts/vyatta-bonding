@@ -93,9 +93,6 @@ sub create_if {
     start_daemon( $intf, $mode, 'layer3+4', $lacp_options );
     Vyatta::Interface::vrf_bind_one($intf);
     if_up( $intf );
-
-    # to trigger the one-time handler in configd:end
-    touch( "/tmp/bonding_${intf}." . getppid() );
 }
 
 sub delete_if {
