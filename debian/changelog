@@ -1,3 +1,9 @@
+vyatta-interfaces-bonding (0.45) unstable; urgency=medium
+
+  * scripts: remove dead code (Bugfix: VRVDR-51857)
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Thu, 25 Jun 2020 06:20:03 -0400
+
 vyatta-interfaces-bonding (0.44) unstable; urgency=medium
 
   * Cleanup potentially offensive language (Bugfix: VRVDR-51641)
