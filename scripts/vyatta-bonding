@@ -44,30 +44,35 @@ use strict;
 use warnings;
 
 sub touch {
-    my ( $file ) = @_;
+    my ($file) = @_;
     my $fh;
-    open($fh, ">>", "$file")
-	or die "$file: Cannot open file: $!\n";
+    open( $fh, ">>", "$file" )
+      or die "$file: Cannot open file: $!\n";
     close($fh);
 }
 
 # Check if key defined in interface already in use
 sub check_key_in_use {
     my $intf = shift;
-    my $cfg = new Vyatta::Config;
-    my $key = $cfg->returnValue("interfaces bonding $intf lacp-options key");
+    my $cfg  = new Vyatta::Config;
+    my $key  = $cfg->returnValue("interfaces bonding $intf lacp-options key");
 
-    if (!$key) {
+    if ( !$key ) {
         return 0;
     }
 
     # lacp-options key is set, so check the key
-    foreach my $bondif ($cfg->listNodes('interfaces bonding')) {
+    foreach my $bondif ( $cfg->listNodes('interfaces bonding') ) {
+
         # no need to check itself
         next if ( $bondif eq $intf );
- 
-        if ($cfg->exists( 'interfaces bonding ' . $bondif .
-                          ' lacp-options key ' . $key) ) {
+
+        if (
+            $cfg->exists(
+                'interfaces bonding ' . $bondif . ' lacp-options key ' . $key
+            )
+          )
+        {
             print "LACP aggregation key $key is already used";
             return 1;
         }
@@ -78,25 +83,25 @@ sub check_key_in_use {
 
 sub create_if {
     my ( $interface, $mode, $lacp_options ) = @_;
-    my $intf = $interface->name();
-    my $cfg = new Vyatta::Config;
-    my $is_configured = $cfg->isEffective("/interfaces/bonding/" . $intf);
+    my $intf          = $interface->name();
+    my $cfg           = new Vyatta::Config;
+    my $is_configured = $cfg->isEffective( "/interfaces/bonding/" . $intf );
 
     # the bonding driver is not able to delete an interface, so just
     # check if the interface has a configuration.
     die "$intf: Device already exists" if $is_configured;
 
-    if ( check_key_in_use( $intf ) ) {
+    if ( check_key_in_use($intf) ) {
         exit 1;
     }
 
     start_daemon( $intf, $mode, 'layer3+4', $lacp_options );
     Vyatta::Interface::vrf_bind_one($intf);
-    if_up( $intf );
+    if_up($intf);
 }
 
 sub delete_if {
-    my ( $interface ) = @_;
+    my ($interface) = @_;
     my $intf = $interface->name();
     die "$intf: Device not found" unless $interface->exists();
 
@@ -113,7 +118,7 @@ sub delete_if {
     # the device file there but need to take care of that here!
     #
     system("ip link delete $intf")
-        and die("$intf: Unable to delete device: $!");
+      and die("$intf: Unable to delete device: $!");
 
     return;
 }
@@ -124,7 +129,7 @@ sub change_config {
     my $intf = $interface->name();
     die "$intf: Device not found" unless $interface->exists();
 
-    my $cfg = Vyatta::Config->new($interface->path());
+    my $cfg        = Vyatta::Config->new( $interface->path() );
     my $is_changed = $cfg->isChanged("mode");
     $is_changed ||= $cfg->isChanged("lacp-options activity");
     $is_changed ||= $cfg->isChanged("lacp-options key");
@@ -134,7 +139,7 @@ sub change_config {
     # don't restart teamd unnecessarily.
     return if not $is_changed;
 
-    if ( check_key_in_use( $intf ) ) {
+    if ( check_key_in_use($intf) ) {
         exit 1;
     }
 
@@ -146,7 +151,7 @@ sub change_config {
     my @members = get_members($intf);
 
     foreach my $member (@members) {
-	remove_member( $intf, $member );
+        remove_member( $intf, $member );
     }
 
     my $origmode = $cfg->returnOrigValue("mode");
@@ -161,8 +166,8 @@ sub change_config {
     }
     start_daemon( $intf, $mode, 'layer3+4', $lacp_options );
 
-    foreach my $member ( @members ) {
-	add_member( $intf, $member );
+    foreach my $member (@members) {
+        add_member( $intf, $member );
     }
     if_up($intf) if ($bond_up);
 }
@@ -170,9 +175,9 @@ sub change_config {
 # Consistency checks prior to commit
 sub commit_check {
     my ( $interface, $member ) = @_;
-    my $cfg = new Vyatta::Config;
-    my $intf = $interface->name();
-    my $is_configured = $cfg->exists("/interfaces/bonding/" . $intf);
+    my $cfg           = new Vyatta::Config;
+    my $intf          = $interface->name();
+    my $is_configured = $cfg->exists( "/interfaces/bonding/" . $intf );
     die "Error: interface $member belongs to nonexistent bond-group $intf\n"
       unless $is_configured;
 
@@ -188,46 +193,49 @@ sub commit_check {
 
     my $memberif = new Vyatta::Interface($member);
     die "$member: unknown interface type" unless $memberif;
-    $cfg->setLevel($memberif->path());
+    $cfg->setLevel( $memberif->path() );
 
     # Dataplane/DPDK bonding implementation doesn't allow disabled
     # interfaces to be dealt with in a trivial way, so prevent this
     # configuration. The FAL implementation does though.
     die "Error: can not add disabled interface $member to bond-group $intf\n"
-	if !is_hw_interface($member) && $cfg->exists('disable');
+      if !is_hw_interface($member) && $cfg->exists('disable');
 
-    die "Error: IP v4/v6 routing protocols cannot be configured on bond group members\n"
-        if (!have_all_default_values($cfg, "ip") or
-            !have_all_default_values($cfg, "ipv6") or
-            !have_all_default_values($cfg, "policy"));
+    die
+"Error: IP v4/v6 routing protocols cannot be configured on bond group members\n"
+      if ( !have_all_default_values( $cfg, "ip" )
+        or !have_all_default_values( $cfg, "ipv6" )
+        or !have_all_default_values( $cfg, "policy" ) );
 
     die "Error: can not add member interface with a provisioned MTU\n"
-        if (!have_all_default_values($cfg, "mtu"));
+      if ( !have_all_default_values( $cfg, "mtu" ) );
 
-    die "Error: can not add interface $member that is part of bridge to bond-group\n"
-	if defined($cfg->returnValue("bridge-group bridge"));
+    die
+"Error: can not add interface $member that is part of bridge to bond-group\n"
+      if defined( $cfg->returnValue("bridge-group bridge") );
 
     my @addr = $cfg->returnValues('address');
     die "Error: can not add interface $member with addresses to bond-group\n"
-	if (@addr);
+      if (@addr);
 
     my @vif = $cfg->listNodes('vif');
     die "Error: can not add interface $member with VIF to bond-group\n"
-        if (@vif);
+      if (@vif);
 
     my @vrrp = $cfg->listNodes('vrrp vrrp-group');
     die "Error: can not add interface $member with VRRP to bond-group\n"
-	if (@vrrp);
+      if (@vrrp);
 
     die "Error: can not add member interface with a provisioned vlan-protocol\n"
-        if (!have_all_default_values($cfg, 'vlan-protocol'));
+      if ( !have_all_default_values( $cfg, 'vlan-protocol' ) );
 
     $cfg->setLevel('interfaces pseudo-ethernet');
-    foreach my $peth ($cfg->listNodes()) {
-	my $link = $cfg->returnValue("$peth link");
+    foreach my $peth ( $cfg->listNodes() ) {
+        my $link = $cfg->returnValue("$peth link");
 
-	die "Error: can not add interface $member to bond-group already used by pseudo-ethernet $peth\n"
-	    if ($link eq $member);
+        die
+"Error: can not add interface $member to bond-group already used by pseudo-ethernet $peth\n"
+          if ( $link eq $member );
     }
 }
 
@@ -235,7 +243,7 @@ sub commit_check {
 # being made a member automatically brings interface up!
 sub add_port {
     my ( $interface, $member ) = @_;
-    my $cfg = new Vyatta::Config;
+    my $cfg  = new Vyatta::Config;
     my $intf = $interface->name();
     die "$intf: Device not found" unless $interface->exists();
 
@@ -246,12 +254,12 @@ sub add_port {
       is_supported_platform_feature( "bonding.hardware-members-only",
         undef, undef );
 
-    $cfg->setLevel($memberif->path());
+    $cfg->setLevel( $memberif->path() );
     my $old = $cfg->returnOrigValue('bond-group');
 
-    if_down($member) if ($memberif->up());
-    remove_member($old, $member) if $old;
-    add_member ($intf, $member);
+    if_down($member) if ( $memberif->up() );
+    remove_member( $old, $member ) if $old;
+    add_member( $intf, $member );
 
     # Undo automatic bringing up of interface when adding as a member,
     # but only for hardware bonding as not supported for software
@@ -259,29 +267,30 @@ sub add_port {
 
     # Deal with races between adding member and changing primary by
     # performing that update here
-    $cfg->setLevel($interface->path());
-    change_primary($interface, $cfg->returnValue('primary')) if
-        $cfg->exists('primary') && $cfg->returnValue('primary') eq $member;
+    $cfg->setLevel( $interface->path() );
+    change_primary( $interface, $cfg->returnValue('primary') )
+      if $cfg->exists('primary') && $cfg->returnValue('primary') eq $member;
 }
 
 sub remove_port {
-   my ( $interface, $member ) = @_;
-   my $intf = $interface->name();
+    my ( $interface, $member ) = @_;
+    my $intf = $interface->name();
 
-   my $memberif = new Vyatta::Interface($member);
-   die "$member: unknown interface type" unless $memberif;
+    my $memberif = new Vyatta::Interface($member);
+    die "$member: unknown interface type" unless $memberif;
 
-   my $hw_members_only =
-       is_supported_platform_feature( "bonding.hardware-members-only",
-                                      undef, undef );
+    my $hw_members_only =
+      is_supported_platform_feature( "bonding.hardware-members-only",
+        undef, undef );
 
-   # Only if the bonding interface exists, since it may already have
-   # been removed and implicitly removed this as a member
-   remove_member ($intf, $member) if $interface->exists();
-   # Undo automatic bringing down of interface when removing as a member
-   if_up ($member) if !$memberif->disabled() || !$hw_members_only;
+    # Only if the bonding interface exists, since it may already have
+    # been removed and implicitly removed this as a member
+    remove_member( $intf, $member ) if $interface->exists();
 
-   system("restore-ipv6-address.pl", "$member");
+    # Undo automatic bringing down of interface when removing as a member
+    if_up($member) if !$memberif->disabled() || !$hw_members_only;
+
+    system( "restore-ipv6-address.pl", "$member" );
 }
 
 sub list_modes {
@@ -291,33 +300,34 @@ sub list_modes {
 }
 
 sub list_members {
-    my ( $interface ) = @_;
+    my ($interface) = @_;
     my $intf = $interface->name();
     die "$intf: Device not found" unless $interface->exists();
 
     my @members = get_members($intf);
-    print STDOUT join(' ', @members), "\n";
+    print STDOUT join( ' ', @members ), "\n";
     exit 0;
 }
 
 sub list_configured_members {
-    my ( $interface ) = @_;
-    my $intf = $interface->name();
-    my $cfg = new Vyatta::Config;
-    my $is_configured = $cfg->exists("/interfaces/bonding/" . $intf);
+    my ($interface)   = @_;
+    my $intf          = $interface->name();
+    my $cfg           = new Vyatta::Config;
+    my $is_configured = $cfg->exists( "/interfaces/bonding/" . $intf );
     die "$intf: Device not found" unless $is_configured;
 
     my @members = ();
 
-    foreach my $dpintf ($cfg->listNodes('interfaces dataplane')) {
-        my $group = $cfg->returnValue('interfaces dataplane ' . $dpintf . ' bond-group');
-        if (defined($group)) {
-            if ($group eq $intf) {
-                push(@members, $dpintf);
+    foreach my $dpintf ( $cfg->listNodes('interfaces dataplane') ) {
+        my $group = $cfg->returnValue(
+            'interfaces dataplane ' . $dpintf . ' bond-group' );
+        if ( defined($group) ) {
+            if ( $group eq $intf ) {
+                push( @members, $dpintf );
             }
         }
     }
-    print STDOUT join(' ', @members), "\n";
+    print STDOUT join( ' ', @members ), "\n";
     exit 0;
 }
 
@@ -340,7 +350,7 @@ sub change_primary {
     die "$intf: Device not found" unless $interface->exists();
 
     my $cfg = Vyatta::Config->new();
-    $cfg->setLevel($interface->path());
+    $cfg->setLevel( $interface->path() );
     my $old = $cfg->returnOrigValue('primary');
     if ($old) {
         set_priority( $intf, $old, 0 );
@@ -362,14 +372,14 @@ sub delete_mac {
     my ( $interface, $delete_mac ) = @_;
     my $intf = $interface->name();
     die "$intf: Device not found" unless $interface->exists();
- 
+
     my @members = get_members($intf);
 
     foreach my $member (@members) {
-        my $member_mac = (split ' ', capture('ethtool', '-P', $member))[2];
+        my $member_mac = ( split ' ', capture( 'ethtool', '-P', $member ) )[2];
 
         # Bonding already has a good mac inherited from its member so
-        # deleting its configured mac requires no mac change 
+        # deleting its configured mac requires no mac change
         if ( lc($delete_mac) eq lc($member_mac) ) {
             return;
         }
@@ -387,49 +397,56 @@ sub usage {
     exit 1;
 }
 
-my ( $dev, $mode, %lacp_options, $add_port, $rem_port, $check, $opt_list_modes,
-     $opt_create, $opt_delete, $opt_list_members, $opt_primary_port,
-     $opt_list_configured_members, $delete_mac );
+my (
+    $dev,              $mode,
+    %lacp_options,     $add_port,
+    $rem_port,         $check,
+    $opt_list_modes,   $opt_create,
+    $opt_delete,       $opt_list_members,
+    $opt_primary_port, $opt_list_configured_members,
+    $delete_mac
+);
 
 GetOptions(
-    'dev=s'    => \$dev,
-    'mode=s'   => \$mode,
-    'lacp_activity:s' => \$lacp_options{activity},
-    'lacp_key:s' => \$lacp_options{key},
-    'lacp_rate:s' => \$lacp_options{rate},
-    'add=s'    => \$add_port,
-    'remove=s' => \$rem_port,
-    'check=s'  => \$check,
-    'list-modes' => \$opt_list_modes,
-    'create'     => \$opt_create,
-    'delete'     => \$opt_delete,
-    'list-members' => \$opt_list_members,
+    'dev=s'                   => \$dev,
+    'mode=s'                  => \$mode,
+    'lacp_activity:s'         => \$lacp_options{activity},
+    'lacp_key:s'              => \$lacp_options{key},
+    'lacp_rate:s'             => \$lacp_options{rate},
+    'add=s'                   => \$add_port,
+    'remove=s'                => \$rem_port,
+    'check=s'                 => \$check,
+    'list-modes'              => \$opt_list_modes,
+    'create'                  => \$opt_create,
+    'delete'                  => \$opt_delete,
+    'list-members'            => \$opt_list_members,
     'list-configured-members' => \$opt_list_configured_members,
-    'primary=s'  => \$opt_primary_port,
-    'delete_mac=s'  => \$delete_mac,
-    'minimum-links=i'  => \$lacp_options{minlinks},
+    'primary=s'               => \$opt_primary_port,
+    'delete_mac=s'            => \$delete_mac,
+    'minimum-links=i'         => \$lacp_options{minlinks},
 ) or usage();
 
-list_modes()			if $opt_list_modes;
+list_modes() if $opt_list_modes;
 
 die "$0: device not specified\n" unless $dev;
-die "$0: --create and --delete are mutually exclusive\n" if $opt_create && $opt_delete;
+die "$0: --create and --delete are mutually exclusive\n"
+  if $opt_create && $opt_delete;
 
 my $interface = new Vyatta::Interface($dev);
 die "$dev does not match any known interface name type\n" unless $interface;
 
 # default values if the Yang model passed empty variables (VRVDR-14313)
 $lacp_options{activity} ||= 'active';
-$lacp_options{key} ||= '0';
-$lacp_options{rate} ||= 'slow';
+$lacp_options{key}      ||= '0';
+$lacp_options{rate}     ||= 'slow';
 
-commit_check( $interface, $check )   if $check;
-create_if( $interface, $mode, \%lacp_options )	if $mode && $opt_create;
-delete_if( $interface )		if $opt_delete;
-change_config( $interface, $mode, \%lacp_options )	if $mode && ! $opt_create;
-add_port( $interface, $add_port )	if $add_port;
+commit_check( $interface, $check ) if $check;
+create_if( $interface, $mode, \%lacp_options ) if $mode && $opt_create;
+delete_if($interface) if $opt_delete;
+change_config( $interface, $mode, \%lacp_options ) if $mode && !$opt_create;
+add_port( $interface, $add_port ) if $add_port;
 remove_port( $interface, $rem_port ) if $rem_port;
-list_members( $interface )		if $opt_list_members;
-list_configured_members( $interface )	if $opt_list_configured_members;
+list_members($interface)            if $opt_list_members;
+list_configured_members($interface) if $opt_list_configured_members;
 change_primary( $interface, $opt_primary_port ) if $opt_primary_port;
 delete_mac( $interface, $delete_mac ) if $delete_mac;
