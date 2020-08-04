@@ -3,8 +3,10 @@ Section: contrib/net
 Priority: extra
 Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 Build-Depends: debhelper (>= 9), dh-yang, autoconf, automake, autotools-dev, cpio, libjson-perl,
+ libgoogle-protocolbuffers-perl,
  libipc-system-simple-perl,
  libvyatta-cfg1,
+ libvyatta-dataplane-proto-support (>= 3.12.6),
 Standards-Version: 3.9.6
 
 Package: vyatta-interfaces-bonding
@@ -16,9 +18,12 @@ Depends: ${misc:Depends},
  vplane-config (>> 2.19),
  vyatta-cfg (>= 0.105.3),
  vyatta-interfaces (>= 0.5),
+ vyatta-dataplane (>= 3.12.6),
  vyatta-system,
  libteam-utils (>= 1.11-1vyatta18),
+ libgoogle-protocolbuffers-perl,
  libipc-system-simple-perl,
+ libvyatta-dataplane-proto-support (>= 3.10.55),
  libvyatta-interface-perl (>= 1.44)
 Description: Vyatta interface link aggregation configuration
  Vyatta interface link aggregation configuration utilities, templates and

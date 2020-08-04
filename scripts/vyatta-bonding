@@ -37,8 +37,11 @@ use Vyatta::Interface;
 use Vyatta::Config;
 use Vyatta::Bonding;
 use Vyatta::Platform qw(is_supported_platform_feature);
+use Vyatta::VPlaned;
 use Getopt::Long;
 use IPC::System::Simple qw(capture);
+
+use vyatta::proto::LAGConfig;
 
 use strict;
 use warnings;
@@ -81,6 +84,55 @@ sub check_key_in_use {
     return 0;
 }
 
+sub lag_update {
+    my ( $ifname, $mode, $lacp_options ) = @_;
+    my $controller = new Vyatta::VPlaned;
+    my $lag_mode;
+    my $periodic_rate;
+    my $activity;
+
+    if ( $mode eq 'lacp' ) {
+        $lag_mode = LAGConfig::LagMode::LAG_MODE_LACP;
+    } elsif ( $mode eq 'active-backup' ) {
+        $lag_mode = LAGConfig::LagMode::LAG_MODE_ACTIVE_BACKUP;
+    } elsif ( $mode eq 'balanced' ) {
+        $lag_mode = LAGConfig::LagMode::LAG_MODE_BALANCED;
+    }
+
+    if ( $lacp_options->{activity} eq 'active' ) {
+        $activity = LAGConfig::LacpActivity::LACP_ACTIVITY_ACTIVE;
+    } else {
+        $activity = LAGConfig::LacpActivity::LACP_ACTIVITY_PASSIVE;
+    }
+
+    if ( $lacp_options->{rate} eq 'slow' ) {
+        $periodic_rate = LAGConfig::LacpPeriodicRate::LACP_PERIODIC_RATE_SLOW;
+    } else {
+        $periodic_rate = LAGConfig::LacpPeriodicRate::LACP_PERIODIC_RATE_FAST;
+    }
+
+    my $message = LAGConfig->new(
+        {
+            lag_create => new LAGConfig::LagCreate(
+                {
+                    ifname        => $ifname,
+                    minimum_links => $lacp_options->{minlinks},
+                    mode          => $lag_mode,
+                    lacp_options  => new LAGConfig::LagCreate::LacpOptions(
+                        {
+                            key           => $lacp_options->{key},
+                            periodic_rate => $periodic_rate,
+                            lacp_activity => $activity,
+                        }
+                    ),
+                }
+            ),
+        }
+    );
+    $controller->store_pb( "lag $ifname", $message, 'vyatta:lag', $ifname,
+        'SET' );
+}
+
 sub create_if {
     my ( $interface, $mode, $lacp_options ) = @_;
     my $intf          = $interface->name();
@@ -95,9 +147,26 @@ sub create_if {
         exit 1;
     }
 
+    lag_update( $intf, $mode, $lacp_options );
     start_daemon( $intf, $mode, 'layer3+4', $lacp_options );
     Vyatta::Interface::vrf_bind_one($intf);
     if_up($intf);
+}
+
+sub lag_delete {
+    my ($ifname)   = @_;
+    my $controller = new Vyatta::VPlaned;
+    my $message    = LAGConfig->new(
+        {
+            lag_delete => new LAGConfig::LagDelete(
+                {
+                    ifname => $ifname,
+                }
+            ),
+        }
+    );
+    $controller->store_pb( "lag $ifname", $message, 'vyatta:lag', $ifname,
+        'DELETE' );
 }
 
 sub delete_if {
@@ -111,6 +180,7 @@ sub delete_if {
     # commit check.
 
     if_down($intf) if $interface->up();
+    lag_delete($intf);
     kill_daemon($intf);
 
     #
@@ -164,6 +234,7 @@ sub change_config {
         system("teamnl $intf setoption mode activebackup")
           and die("$intf: Unable to set interim activebackup mode: $!");
     }
+    lag_update( $intf, $mode, $lacp_options );
     start_daemon( $intf, $mode, 'layer3+4', $lacp_options );
 
     foreach my $member (@members) {
