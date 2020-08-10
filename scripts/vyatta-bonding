@@ -231,8 +231,8 @@ sub commit_check {
     }
 }
 
-# bonding requires interface to be down before enslaving
-# but enslaving automatically brings interface up!
+# bonding requires interface to be down before being made a member but
+# being made a member automatically brings interface up!
 sub add_port {
     my ( $interface, $member ) = @_;
     my $cfg = new Vyatta::Config;
@@ -242,12 +242,20 @@ sub add_port {
     my $memberif = new Vyatta::Interface($member);
     die "$member: unknown interface type" unless $memberif;
 
+    my $hw_members_only =
+      is_supported_platform_feature( "bonding.hardware-members-only",
+        undef, undef );
+
     $cfg->setLevel($memberif->path());
     my $old = $cfg->returnOrigValue('bond-group');
 
     if_down($member) if ($memberif->up());
     remove_member($old, $member) if $old;
     add_member ($intf, $member);
+
+    # Undo automatic bringing up of interface when adding as a member,
+    # but only for hardware bonding as not supported for software
+    if_down($member) if $memberif->disabled() && $hw_members_only;
 
     # Deal with races between adding member and changing primary by
     # performing that update here
@@ -261,8 +269,16 @@ sub remove_port {
    my $intf = $interface->name();
    die "$intf: Device not found" unless $interface->exists();
 
+   my $memberif = new Vyatta::Interface($member);
+   die "$member: unknown interface type" unless $memberif;
+
+   my $hw_members_only =
+       is_supported_platform_feature( "bonding.hardware-members-only",
+                                      undef, undef );
+
    remove_member ($intf, $member);
-   if_up ($member);
+   # Undo automatic bringing down of interface when removing as a member
+   if_up ($member) if !$memberif->disabled() || !$hw_members_only;
 
    system("restore-ipv6-address.pl", "$member");
 }
