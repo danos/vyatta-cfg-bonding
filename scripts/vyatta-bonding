@@ -267,7 +267,6 @@ sub add_port {
 sub remove_port {
    my ( $interface, $member ) = @_;
    my $intf = $interface->name();
-   die "$intf: Device not found" unless $interface->exists();
 
    my $memberif = new Vyatta::Interface($member);
    die "$member: unknown interface type" unless $memberif;
@@ -276,7 +275,9 @@ sub remove_port {
        is_supported_platform_feature( "bonding.hardware-members-only",
                                       undef, undef );
 
-   remove_member ($intf, $member);
+   # Only if the bonding interface exists, since it may already have
+   # been removed and implicitly removed this as a member
+   remove_member ($intf, $member) if $interface->exists();
    # Undo automatic bringing down of interface when removing as a member
    if_up ($member) if !$memberif->disabled() || !$hw_members_only;
 
