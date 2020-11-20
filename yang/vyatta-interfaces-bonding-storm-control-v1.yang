@@ -21,7 +21,7 @@ module vyatta-interfaces-bonding-storm-control-v1 {
 		Web: www.att.com";
 
 	description
-		"Copyright (c) 2019, AT&T Intellectual Property.
+		"Copyright (c) 2019-2020, AT&T Intellectual Property.
 		 All rights reserved.
 
 		 Redistribution and use in source and binary forms, with or
@@ -55,12 +55,20 @@ module vyatta-interfaces-bonding-storm-control-v1 {
 
 		 The YANG module for vyatta-interfaces-bonding-storm-control-v1";
 
+	revision 2020-11-20 {
+		description "Add ability to configure profile on a vif";
+	}
+
 	revision 2019-12-02 {
 		description "Initial revision";
 	}
 
 	augment /if:interfaces/bonding:bonding {
 		uses storm:storm-control-intf-cfg;
+	}
+
+	augment /if:interfaces/bonding:bonding/bonding:vif {
+		uses storm:storm-control-vif-cfg;
 	}
 
 	augment /if:interfaces/bonding:bonding/storm-control {
