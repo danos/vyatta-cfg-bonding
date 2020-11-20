@@ -1,3 +1,10 @@
+vyatta-interfaces-bonding (0.47) unstable; urgency=medium
+
+  * vyatta-bonding: clean up some indentation
+  * vyatta-bonding: send LAG information to dataplane (Bugfix: VRVDR-52496)
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Fri, 20 Nov 2020 07:15:56 -0500
+
 vyatta-interfaces-bonding (0.46) unstable; urgency=medium
 
   [ Robert Shearman ]
