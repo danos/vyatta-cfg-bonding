@@ -5,7 +5,7 @@ Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 Build-Depends: debhelper (>= 9), dh-yang, autoconf, automake, autotools-dev, cpio, libjson-perl,
  libgoogle-protocolbuffers-perl,
  libipc-system-simple-perl,
- libvyatta-cfg1,
+ libvyatta-config-perl,
  libvyatta-dataplane-proto-support (>= 3.12.6),
 Standards-Version: 3.9.6
 
@@ -24,7 +24,8 @@ Depends: ${misc:Depends},
  libgoogle-protocolbuffers-perl,
  libipc-system-simple-perl,
  libvyatta-dataplane-proto-support (>= 3.10.55),
- libvyatta-interface-perl (>= 1.44)
+ libvyatta-interface-perl (>= 1.44),
+ libvyatta-config-perl,
 Description: Vyatta interface link aggregation configuration
  Vyatta interface link aggregation configuration utilities, templates and
  scripts.
