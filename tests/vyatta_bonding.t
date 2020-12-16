@@ -116,6 +116,37 @@ sub mock_readpipe {
     is_deeply([sort @got], [sort @expected],
 	      "get_members() returns the correct members");
 }
+{
+    local %mock_cmds = mock_init();
+    local $current_cmd = \&mock_readpipe;
+
+    push(@{$mock_cmds{'text'}}, qq(0));
+    push(@{$mock_cmds{'text'}}, qq(0));
+
+    ok(start_daemon('dp0bond0', 'lacp', 'layer2',
+                    { activity => 'active', key => '0' }));
+    is($mock_cmds{'index'}, 3);
+    ok($mock_cmds{'cmd'}[2] eq '/usr/bin/teamd --team-dev dp0bond0 --daemon --no-quit-destroy --take-over --config {"link_watch":{"name":"ethtool"},"runner":{"name":"lacp","tx_hash":["eth"]}}');
+
+    #Validating the add_member and generating notifications
+    add_member('dp0bond0', 'dp0p5p2');
+    is($mock_cmds{'index'}, 5);
+
+    #Following is the validation of add port to a bonding group
+    ok($mock_cmds{'cmd'}[3] eq 'ip link set dev dp0p5p2 master dp0bond0');
+
+    #Following is the validation of notification getting generated add_member is invoked
+    ok($mock_cmds{'cmd'}[4] eq 'vyatta-ntfy-bond-membership-chg dp0bond0 dp0p5p2 add');
+
+    remove_member('dp0bond0', 'dp0p5p2');
+    is($mock_cmds{'index'}, 7);
+
+    #Following is the validation of del port from a bonding group
+    ok($mock_cmds{'cmd'}[5] eq 'ip link set dev dp0p5p2 nomaster');
+
+    #Following is the validation of notification getting generated when remove_member is invoked
+    ok($mock_cmds{'cmd'}[6] eq 'vyatta-ntfy-bond-membership-chg dp0bond0 dp0p5p2 del');
+}
 
 {
     local %mock_cmds = mock_init();

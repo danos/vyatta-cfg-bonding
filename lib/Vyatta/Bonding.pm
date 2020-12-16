@@ -227,12 +227,16 @@ sub add_member {
     my ( $intf, $member ) = @_;
     system("ip link set dev $member master $intf")
 	and die "$intf: Cannot add $member: $!\n";
+    #Generating notification for the application interested
+    system("vyatta-ntfy-bond-membership-chg", "$intf", "$member", "add");
 }
 
 sub remove_member {
     my ( $intf, $member ) = @_;
     system("ip link set dev $member nomaster")
 	and die "$intf: Cannot remove $member: $!\n";
+    #Generating notification for the application interested
+    system("vyatta-ntfy-bond-membership-chg", "$intf", "$member", "del");
 }
 
 sub if_down {
