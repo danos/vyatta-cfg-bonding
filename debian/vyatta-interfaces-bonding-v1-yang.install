@@ -1,1 +1,2 @@
 usr/share/configd/yang/vyatta-interfaces-bonding-v1.yang
+platform/vyatta-interfaces-bonding.platform lib/vyatta-platform/platforms

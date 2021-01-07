@@ -29,7 +29,7 @@ module vyatta-interfaces-bonding-v1 {
 		 Web: www.att.com";
 
 	description
-		"Copyright (c) 2017-2020, AT&T Intellectual Property.
+		"Copyright (c) 2017-2021, AT&T Intellectual Property.
 		 All rights reserved.
 
 		 Copyright (c) 2014-2017 by Brocade Communications Systems, Inc.
@@ -65,6 +65,10 @@ module vyatta-interfaces-bonding-v1 {
 		 SPDX-License-Identifier: BSD-3-Clause
 
 		 Vyatta interface bonding type (LAG) type Yang model v1 package.";
+
+	revision 2021-01-07 {
+		description "Added support for LAG QoS.";
+	}
 
 	revision 2020-06-17 {
 		description "Cleanup potentially offensive language.";
@@ -129,6 +133,10 @@ module vyatta-interfaces-bonding-v1 {
 	}
 	revision 2015-08-05 {
 		description "Initial revision of version 1.";
+	}
+
+	feature hardware-qos-bond {
+		description "Hardware-based QoS on bonding groups";
 	}
 
 	typedef bonding-ifname {
@@ -279,6 +287,24 @@ module vyatta-interfaces-bonding-v1 {
 			configd:delete "vyatta-bonding --dev=$VAR(@) --remove=$VAR(../@)";
 		}
 	}
+
+	notification bond-membership-update {
+		if-feature hardware-qos-bond;
+		description "Notifies when bonding group has a member added or removed";
+		leaf bond-group {
+			description "The name of the bonding group";
+			type string;
+		}
+		leaf member-interface {
+			description "The name of the member interface added/deleted";
+			type string;
+		}
+		leaf operation-add {
+			description "The operation-add flag is true when member is added. False otherwise";
+			type boolean;
+		}
+	}
+
 	augment /if:interfaces/bonding/ip {
 		container unnumbered {
 			configd:help "Enable unnumbered IP";
