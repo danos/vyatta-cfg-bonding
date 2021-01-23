@@ -28,6 +28,14 @@ BEGIN {
 
 my $TEAMD_BIN = "/usr/bin/teamd";
 
+
+sub is_hardware_qos_bond_enabled {
+    my $feature_marker =
+       "/run/vyatta-platform/features/vyatta-interfaces-bonding-v1/hardware-qos-bond";
+
+    return -e $feature_marker;
+}
+
 my %BONDING_MODES = (
     "active-backup"         => "activebackup",
     "802.3ad"               => "lacp",
@@ -227,16 +235,20 @@ sub add_member {
     my ( $intf, $member ) = @_;
     system("ip link set dev $member master $intf")
 	and die "$intf: Cannot add $member: $!\n";
-    #Generating notification for the application interested
-    system("vyatta-ntfy-bond-membership-chg", "$intf", "$member", "add");
+    if (is_hardware_qos_bond_enabled()) {
+        # Generating notification for the application interested
+        system("vyatta-ntfy-bond-membership-chg", "$intf", "$member", "add");
+    }
 }
 
 sub remove_member {
     my ( $intf, $member ) = @_;
     system("ip link set dev $member nomaster")
 	and die "$intf: Cannot remove $member: $!\n";
-    #Generating notification for the application interested
-    system("vyatta-ntfy-bond-membership-chg", "$intf", "$member", "del");
+    if (is_hardware_qos_bond_enabled()) {
+        # Generating notification for the application interested
+        system("vyatta-ntfy-bond-membership-chg", "$intf", "$member", "del");
+    }
 }
 
 sub if_down {
