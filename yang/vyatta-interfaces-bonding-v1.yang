@@ -66,7 +66,7 @@ module vyatta-interfaces-bonding-v1 {
 
 		 Vyatta interface bonding type (LAG) type Yang model v1 package.";
 
-	revision 2021-01-07 {
+	revision 2021-02-19 {
 		description "Added support for LAG QoS.";
 	}
 
@@ -290,18 +290,17 @@ module vyatta-interfaces-bonding-v1 {
 
 	notification bond-membership-update {
 		if-feature hardware-qos-bond;
-		description "Notifies when bonding group has a member added or removed";
-		leaf bond-group {
-			description "The name of the bonding group";
-			type string;
-		}
-		leaf member-interface {
-			description "The name of the member interface added/deleted";
-			type string;
-		}
-		leaf operation-add {
-			description "The operation-add flag is true when member is added. False otherwise";
-			type boolean;
+		description "Notifies bonding groups membership changes";
+		list bond-groups {
+			key "bond-group";
+			leaf bond-group {
+				description "The name of the bonding group";
+				type bonding-ifname;
+			}
+			leaf-list bond-members {
+				description "List of bonding members";
+				type interfaces-dataplane:dataplane-ifname;
+			}
 		}
 	}
 
