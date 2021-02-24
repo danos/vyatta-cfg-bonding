@@ -117,8 +117,13 @@ sub mock_readpipe {
 	      "get_members() returns the correct members");
 }
 {
+    my $notification_count = 0;
     *Vyatta::Bonding::is_hardware_qos_bond_enabled = sub {
         return 1;
+    };
+
+    *Vyatta::Bonding::generate_notification = sub {
+        $notification_count++;
     };
 
 
@@ -135,22 +140,21 @@ sub mock_readpipe {
 
     # Validating the add_member and generating notifications
     add_member('dp0bond0', 'dp0p5p2');
-    is($mock_cmds{'index'}, 5);
+    is($mock_cmds{'index'}, 4);
 
     # Following is the validation of add port to a bonding group
     ok($mock_cmds{'cmd'}[3] eq 'ip link set dev dp0p5p2 master dp0bond0');
 
-    # Following is the validation of notification getting generated add_member is invoked
-    ok($mock_cmds{'cmd'}[4] eq 'vyatta-ntfy-bond-membership-chg dp0bond0 dp0p5p2 add');
+    is($notification_count , 1);
 
     remove_member('dp0bond0', 'dp0p5p2');
-    is($mock_cmds{'index'}, 7);
+
+    is($mock_cmds{'index'}, 5);
 
     # Following is the validation of del port from a bonding group
-    ok($mock_cmds{'cmd'}[5] eq 'ip link set dev dp0p5p2 nomaster');
+    ok($mock_cmds{'cmd'}[4] eq 'ip link set dev dp0p5p2 nomaster');
+    is($notification_count , 2);
 
-    # Following is the validation of notification getting generated when remove_member is invoked
-    ok($mock_cmds{'cmd'}[6] eq 'vyatta-ntfy-bond-membership-chg dp0bond0 dp0p5p2 del');
 }
 
 {

@@ -9,4 +9,3 @@ opt/vyatta/share/tmplscripts/interfaces/bonding/primary/configd_validate1.cli
 opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate2.cli
 opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate3.cli
 opt/vyatta/share/tmplscripts/interfaces/dataplane/bond-group/configd_validate1.cli
-scripts/vyatta-ntfy-bond-membership-chg opt/vyatta/bin/

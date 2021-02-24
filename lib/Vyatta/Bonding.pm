@@ -8,9 +8,11 @@ package Vyatta::Bonding;
 
 use lib "/opt/vyatta/share/perl5/";
 use Vyatta::Config;
+use Vyatta::Configd;
 use JSON qw(decode_json to_json);
 use IPC::System::Simple qw(capture EXIT_ANY);
 use Data::Dumper;
+use vci;
 
 use strict;
 use warnings;
@@ -52,6 +54,50 @@ my %HASH_POLICIES = (
     "layer2+3"              => [ "eth", "ip" ],
     "layer3+4"              => [ "ip", "udp" ],
 );
+
+
+sub generate_notification {
+    my $config = Vyatta::Configd::Client->new();
+    die "Unable to connect to the Vyatta Configuration Daemon"
+        unless defined($config);
+
+    my $phys_tree = $config->tree_get_hash( "interfaces dataplane",
+            { 'database' => $Vyatta::Configd::Client::AUTO });
+
+    my $bonding_tree = $config->tree_get_hash( "interfaces bonding",
+            { 'database' => $Vyatta::Configd::Client::AUTO });
+    my @bond_groups;
+
+    # Following loop will construct bond groups and corresponding
+    # bond members
+
+    foreach my $bond_intf ( @{ $bonding_tree->{'bonding'} } ) {
+        my $bondgroup = $bond_intf->{'tagnode'};
+        my @members = ();
+
+        foreach my $dataplane_intf ( @{ $phys_tree->{'dataplane'} } ) {
+            if ($dataplane_intf->{'bond-group'}) {
+                if ($bondgroup eq $dataplane_intf->{'bond-group'})  {
+                    push @members, $dataplane_intf->{'tagnode'};
+                }
+            }
+        }
+        if (scalar(@members)) {
+            push @bond_groups,
+                 {'bond-group' => $bondgroup,
+                     'bond-members' => \@members};
+        }
+
+    }
+
+    # Generate notifications
+    my $client = vci::Client->new();
+
+    $client->emit("vyatta-interfaces-bonding-v1", "bond-membership-update",
+            {'bond-groups' => \@bond_groups});
+
+
+}
 
 sub is_bond_intf {
     my ( $name ) = @_;
@@ -236,8 +282,8 @@ sub add_member {
     system("ip link set dev $member master $intf")
 	and die "$intf: Cannot add $member: $!\n";
     if (is_hardware_qos_bond_enabled()) {
-        # Generating notification for the application interested
-        system("vyatta-ntfy-bond-membership-chg", "$intf", "$member", "add");
+       # Generating notification for the application interested
+       generate_notification();
     }
 }
 
@@ -247,7 +293,7 @@ sub remove_member {
 	and die "$intf: Cannot remove $member: $!\n";
     if (is_hardware_qos_bond_enabled()) {
         # Generating notification for the application interested
-        system("vyatta-ntfy-bond-membership-chg", "$intf", "$member", "del");
+        generate_notification();
     }
 }
 

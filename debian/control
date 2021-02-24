@@ -5,7 +5,9 @@ Maintainer: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 Build-Depends: debhelper (>= 9), dh-yang, autoconf, automake, autotools-dev, cpio, libjson-perl,
  libgoogle-protocolbuffers-perl,
  libipc-system-simple-perl,
+ libvyatta-cfgclient-perl,
  libvyatta-config-perl,
+ libvci-perl,
  libvyatta-dataplane-proto-support (>= 3.12.6),
 Standards-Version: 3.9.6
 
@@ -16,7 +18,8 @@ Conflicts: vyatta-cfg-bonding
 Replaces: vyatta-cfg-bonding
 Depends: ${misc:Depends},
  python3,
- python3-vci,
+ libvci-perl,
+ libvyatta-cfgclient-perl,
  vplane-config (>> 2.19),
  vyatta-cfg (>= 0.105.3),
  vyatta-interfaces (>= 0.5),
