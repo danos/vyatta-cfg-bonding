@@ -1,3 +1,10 @@
+vyatta-interfaces-bonding (0.51) unstable; urgency=medium
+
+  [ Thomas Kiely ]
+  * Command requires privileged mode.
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Fri, 05 Mar 2021 10:59:19 -0500
+
 vyatta-interfaces-bonding (0.50) unstable; urgency=medium
 
   [ Vinicius Soares ]
