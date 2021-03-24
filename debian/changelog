@@ -1,3 +1,11 @@
+vyatta-interfaces-bonding (0.52) unstable; urgency=medium
+
+  [ Manohar Rapeti ]
+  * Bonding: Modified the notification data model
+  * Bonding: Modified the notification logic
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Wed, 24 Mar 2021 08:16:09 -0400
+
 vyatta-interfaces-bonding (0.51) unstable; urgency=medium
 
   [ Thomas Kiely ]
