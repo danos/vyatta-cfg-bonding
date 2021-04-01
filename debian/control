@@ -8,6 +8,7 @@ Build-Depends: debhelper (>= 9), dh-yang, autoconf, automake, autotools-dev, cpi
  libvyatta-cfgclient-perl,
  libvyatta-config-perl,
  libvci-perl,
+ libtest-mockobject-perl,
  libvyatta-dataplane-proto-support (>= 3.12.6),
 Standards-Version: 3.9.6
 

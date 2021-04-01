@@ -13,6 +13,10 @@ use Test::More 'no_plan';  # or use Test::More 'no_plan';
 
 use IPC::System::Simple;
 
+use Test::MockObject;
+my $mock = Test::MockObject->new();
+$mock->fake_module('vci');
+
 use_ok('Vyatta::Bonding');
 
 our $current_cmd = sub { diag( explain( \@_ ) ); return 0; };
