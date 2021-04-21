@@ -66,6 +66,10 @@ module vyatta-interfaces-bonding-v1 {
 
 		 Vyatta interface bonding type (LAG) type Yang model v1 package.";
 
+	revision 2021-04-21 {
+		description "Added configd:must for improved VIF validation.";
+	}
+
 	revision 2021-02-19 {
 		description "Added support for LAG QoS.";
 	}
@@ -172,6 +176,13 @@ module vyatta-interfaces-bonding-v1 {
 					configd:priority "319";
 					configd:validate "/opt/vyatta/share/tmplscripts/interfaces/bonding/configd_validate3.cli";
 				}
+			}
+			must "true()" {
+				configd:must "validate-vif-vlan-settings(.)";
+				error-message
+					"Either one or more VIFs share the same VLAN ID without
+					different inner vlans, or one or more VIFs without explicit
+					VLAN ID set match the VLAN ID on another VIF.";
 			}
 			uses interfaces-dataplane:cpu-affinity;
 			leaf primary {
