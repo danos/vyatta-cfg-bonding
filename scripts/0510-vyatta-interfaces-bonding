@@ -20,5 +20,9 @@ for bnd in $(/opt/vyatta/sbin/vyatta-interfaces.pl --show=bonding --filter-out=v
 	fi
 done
 
+header "LACP state"
+time_out "run show lacp details"
+time_out "run show lacp statistics"
+
 header "Dataplane LAG state"
 time_out "vplsh -l -c lag"

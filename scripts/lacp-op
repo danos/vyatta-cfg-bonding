@@ -1,0 +1,150 @@
+#!/usr/bin/python3
+"""
+Python3 module for displaying LACP state information through configd
+"""
+import argparse
+from vyatta import configd
+
+__version__ = "1.0"
+__author__  = "Michael Doyle"
+__license__ = """
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2 as
+ published by the Free Software Foundation.
+
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ General Public License for more details.
+
+ Date: March 2020
+ Description: Script to display bonding information
+
+ SPDX-License-Identifier: GPL-2.0-only
+"""
+
+__LACP_HDR__ = "E = Expired, F = Defaulted, D = Distributing, " + \
+               "C = Collecting, S = Synchonization\n" + \
+               "G = Aggregating, A = Active, P = Passive, " + \
+               "s = Short Timeout, L = Long Timeout\n* = Flag not set" + \
+               ", - = No state detected"
+
+def lag_detail_printer(lag):
+    '''
+    The printing function for show lacp detail
+    '''
+    ### teamd cfg print
+    print("Control plane {}".format(lag['name']))
+    print("="*79)
+    if 'fast_rate' in lag:
+        timeout = "Fast (1s)"
+    else:
+        timeout = "Slow (30s)"
+    cfg = "{: <16} Timeout: {: <11} ".format(lag['name'], timeout)
+    cfg += "Hash: {} ({})".format(lag['team_mode'], ", ".join(lag['tx_hash']))
+    print(cfg)
+    ### teamd state print
+    state = "{: <16} System Priority: ".format("")
+    state += "{: <5} MAC: {: <18}\n".format(lag['sys_prio'], lag['ether'])
+    state += "{: <16} Mode: {} Active: {: <5} ".format("", lag['mode'], \
+                                                       str(lag['active']))
+    print(state, '\n')
+    print(__LACP_HDR__, '\n')
+    for port in lag['slaves']:
+        hdr = ["Interface", "Speed/Duplex", "MAC", "Link", "Port-prio"]
+        a_hdr = ["actor-id", "prio", "key", "state"]
+        p_hdr = ["partner-id", "prio", "key", "state"]
+        state = [str(port['name']), \
+                str(port['speed']) + "/" + str(port['duplex']), \
+                str(port['ether']), str(port['up']), str(port['prio'])]
+        a_state = [str(port['actor_sys_id']), \
+                   str(port['actor_sys_prio']), str(port['actor_key']), \
+                   str(port['actor_state'])]
+        p_state = [str(port['partner_sys_id']), \
+                   str(port['partner_sys_prio']), \
+                   str(port['partner_key']), str(port['partner_state'])]
+        print("{: <16} {: <16} {: <18} {: <5} {: <9}".format(*hdr))
+        print("-"*(16+16+18+5+9))
+        print("{: <16} {: <16} {: <18} {: <5} {: <9}".format(*state))
+        print()
+        print("{: <16} {: <18} {: <8} {: <8} {: <8}".format("", *a_hdr))
+        print("{: <16} {}".format("", "-"*(18+8+8+8)))
+        print("{: <16} {: <18} {: <8} {: <8} {: <8}".format("", *a_state))
+        print()
+        print("{: <16} {: <18} {: <8} {: <8} {: <8}".format("", *p_hdr))
+        print("{: <16} {}".format("", "-"*(18+8+8+8)))
+        print("{: <16} {: <18} {: <8} {: <8} {: <8}".format("", *p_state))
+        print()
+    ### dataplane controller state print
+    ctrl = "{: <16} Mode: {: <12} ".format(lag['name'], lag['mode'])
+    ctrl += "LACP: {: <5} Hash: {: <27}".format(str(lag['active']), \
+                                                lag['hash_alg'])
+    print("Dataplane {}".format(lag['name']))
+    print("="*79)
+    print(ctrl)
+    print("-"*(16+12+5+27))
+    for port in lag['slaves']:
+        state = "{: <2} {: <16} ".format("", port['name'])
+        state += "{: <16} ".format("Active: " + str(port['dp_active']))
+        if 'dp_lacp' in port:
+            state += "Actor: {} Partner: {} ".format(port['dp_actor_state'], \
+                                                     port['dp_partner_state'])
+            if port['dp_primary']:
+                state += "Primary"
+        print(state)
+    print()
+
+def lag_stats_printer(lag):
+    '''
+    The printing function for show lacp statistics.
+    '''
+    print(__LACP_HDR__)
+    print("="*79)
+    for port in lag['slaves']:
+        if 'up' in port:
+            link = "Up"
+        else:
+            link = "Down"
+        if_state = [link, port['speed'], port['duplex'], port['age']]
+        lag_state = [port['actor_state'], port['partner_state']]
+        rx_state = [port['rx_packets'], port['rx_errors'], port['rx_dropped']]
+        tx_state = [port['tx_packets'], port['tx_errors'], port['tx_dropped']]
+        pkt_hdr = ["", "", "Pkts", "Errors", "Drops"]
+        state = "{: <16} ".format(port['name'])
+        state += "{: <4} {}/{} Last Change: {}\n".format(*if_state)
+        state += "{: <16} Master: {: <16} ".format("", port['dp_master'])
+        state += "Actor: {: <10} Partner: {: <10}".format(*lag_state)
+        rx_stats = "{: <16} {: <10}".format("", "RX")
+        rx_stats += " {: <16} {: <16} {: <16}".format(*rx_state)
+        tx_stats = "{: <16} {: <10}".format("", "TX")
+        tx_stats += " {: <16} {: <16} {: <16}".format(*tx_state)
+        print(state)
+        print("{: <16} {: <10} {: <16} {: <16} {: <16}".format(*pkt_hdr))
+        print(rx_stats)
+        print(tx_stats)
+
+def main():
+    '''
+    Parse input args and either run show lacp
+    details or show lacp statistics
+    '''
+    parser = argparse.ArgumentParser(description="LACP Show")
+    parser.add_argument("-d", "--detail", help="Show LACP details", \
+            action="store_true")
+    parser.add_argument("-s", "--stats", help="Show LACP statistics", \
+            action="store_true")
+    args = parser.parse_args()
+    client = configd.Client()
+    try:
+        tree = client.tree_get_full_dict('interfaces lacp-lags-state lags')
+        if args.detail:
+            for lag in tree['lags']:
+                lag_detail_printer(lag)
+        if args.stats:
+            for lag in tree['lags']:
+                lag_stats_printer(lag)
+    except:
+        pass
+
+if __name__ == "__main__":
+    main()
