@@ -1,3 +1,10 @@
+vyatta-interfaces-bonding (0.55) unstable; urgency=medium
+
+  [ kalaivani vinothkumar ]
+  * Added must to restrict mtu if not default for IPv6
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Mon, 02 Aug 2021 16:13:06 -0400
+
 vyatta-interfaces-bonding (0.54) unstable; urgency=medium
 
   [ William Ivory ]
