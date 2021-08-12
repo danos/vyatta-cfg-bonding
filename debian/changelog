@@ -1,3 +1,10 @@
+vyatta-interfaces-bonding (0.56) unstable; urgency=medium
+
+  [ kalaivani vinothkumar ]
+  * Update constraint to not allow ipv6 and mtu
+
+ -- Charles (Chas) Williams <ciwillia@vyatta.att-mail.com>  Thu, 12 Aug 2021 11:57:03 -0400
+
 vyatta-interfaces-bonding (0.55) unstable; urgency=medium
 
   [ kalaivani vinothkumar ]
