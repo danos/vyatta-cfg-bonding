@@ -218,7 +218,7 @@ sub change_config {
     if_down($intf) if ($bond_up);
 
     # Remove all interfaces
-    my @members = get_members($intf);
+    my @members = get_configured_members($intf);
 
     foreach my $member (@members) {
         remove_member( $intf, $member );
@@ -328,7 +328,6 @@ sub add_port {
     $cfg->setLevel( $memberif->path() );
     my $old = $cfg->returnOrigValue('bond-group');
 
-    if_down($member) if ( $memberif->up() );
     remove_member( $old, $member ) if $old;
     add_member( $intf, $member );
 
@@ -410,7 +409,7 @@ sub delete_mac {
     my $intf = $interface->name();
     die "$intf: Device not found" unless $interface->exists();
 
-    my @members = get_members($intf);
+    my @members = get_configured_members($intf);
 
     foreach my $member (@members) {
         my $member_mac = ( split ' ', capture( 'ethtool', '-P', $member ) )[2];

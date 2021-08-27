@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 # Copyright (c) 2014 by Brocade Communications Systems, Inc.
 # All rights reserved.
 #
@@ -9,6 +9,7 @@ package Vyatta::Bonding;
 use lib "/opt/vyatta/share/perl5/";
 use Vyatta::Config;
 use Vyatta::Configd;
+use Vyatta::Interface;
 use JSON qw(decode_json to_json);
 use IPC::System::Simple qw(capture EXIT_ANY);
 use Data::Dumper;
@@ -25,7 +26,7 @@ BEGIN {
     @EXPORT = qw(get_bonding_modes kill_daemon start_daemon get_members
                  set_primary set_priority add_member remove_member if_down if_up
                  get_lacp_details get_lacpdu_info_state get_mode get_selected
-                 have_all_default_values reset_mac);
+                 have_all_default_values reset_mac get_configured_members);
 }
 
 my $TEAMD_BIN = "/usr/bin/teamd";
@@ -165,6 +166,23 @@ sub start_daemon {
     1;
 }
 
+sub get_configured_members {
+    my ( $intf ) = @_;
+
+    my @members = ();
+    my $config = Vyatta::Configd::Client->new();
+    my $dp_intfs = $config->tree_get_hash( "interfaces dataplane",
+            { 'database' => $Vyatta::Configd::Client::AUTO });
+    foreach my $dp_intf ( @{ $dp_intfs->{'dataplane'} } ) {
+        if ($dp_intf->{'bond-group'}) {
+            if ($intf eq $dp_intf->{'bond-group'})  {
+                push @members, $dp_intf->{'tagnode'};
+            }
+        }
+    }
+    return @members;
+}
+
 sub get_members {
     my ( $intf ) = @_;
 
@@ -279,8 +297,17 @@ sub set_priority {
 
 sub add_member {
     my ( $intf, $member ) = @_;
+
+    my $memberif = new Vyatta::Interface($member);
+    my $isup = $memberif->up();
+
+    # Interface must be down to add to a bond group.
+    if_down($member) if ( $isup );
     system("ip link set dev $member master $intf")
 	and die "$intf: Cannot add $member: $!\n";
+    # Restore the previous state.
+    if_up($member) if ( $isup );
+
     if (is_hardware_qos_bond_enabled()) {
        # Generating notification for the application interested
        generate_notification();
@@ -352,7 +379,7 @@ sub reset_mac {
     die "$intf: not a bonded interface\n"
       if !is_bond_intf($intf);
 
-    my @members = get_members($intf);
+    my @members = get_configured_members($intf);
 
     if (@members) {
         my $member = shift @members;
