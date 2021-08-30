@@ -27,7 +27,7 @@
 #
 # **** End License ****
 #
-# Copyright (c) 2019-2020, AT&T Intellectual Property. All rights reserved.
+# Copyright (c) 2019-2021, AT&T Intellectual Property. All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-only
 #
@@ -370,38 +370,6 @@ sub list_modes {
     exit 0;
 }
 
-sub list_members {
-    my ($interface) = @_;
-    my $intf = $interface->name();
-    die "$intf: Device not found" unless $interface->exists();
-
-    my @members = get_members($intf);
-    print STDOUT join( ' ', @members ), "\n";
-    exit 0;
-}
-
-sub list_configured_members {
-    my ($interface)   = @_;
-    my $intf          = $interface->name();
-    my $cfg           = new Vyatta::Config;
-    my $is_configured = $cfg->exists( "/interfaces/bonding/" . $intf );
-    die "$intf: Device not found" unless $is_configured;
-
-    my @members = ();
-
-    foreach my $dpintf ( $cfg->listNodes('interfaces dataplane') ) {
-        my $group = $cfg->returnValue(
-            'interfaces dataplane ' . $dpintf . ' bond-group' );
-        if ( defined($group) ) {
-            if ( $group eq $intf ) {
-                push( @members, $dpintf );
-            }
-        }
-    }
-    print STDOUT join( ' ', @members ), "\n";
-    exit 0;
-}
-
 sub is_member {
     my ( $interface, $member ) = @_;
     my $intf = $interface->name();
@@ -412,8 +380,6 @@ sub is_member {
 
 ##
 ## In active-backup mode this function changes the active port to $member.
-##
-## NOTE: The arguments are already validated by the CLI via list_members().
 ##
 sub change_primary {
     my ( $interface, $member ) = @_;
@@ -473,8 +439,7 @@ my (
     %lacp_options,     $add_port,
     $rem_port,         $check,
     $opt_list_modes,   $opt_create,
-    $opt_delete,       $opt_list_members,
-    $opt_primary_port, $opt_list_configured_members,
+    $opt_delete,       $opt_primary_port,
     $delete_mac
 );
 
@@ -490,8 +455,6 @@ GetOptions(
     'list-modes'              => \$opt_list_modes,
     'create'                  => \$opt_create,
     'delete'                  => \$opt_delete,
-    'list-members'            => \$opt_list_members,
-    'list-configured-members' => \$opt_list_configured_members,
     'primary=s'               => \$opt_primary_port,
     'delete_mac=s'            => \$delete_mac,
     'minimum-links=i'         => \$lacp_options{minlinks},
@@ -517,7 +480,5 @@ delete_if($interface) if $opt_delete;
 change_config( $interface, $mode, \%lacp_options ) if $mode && !$opt_create;
 add_port( $interface, $add_port ) if $add_port;
 remove_port( $interface, $rem_port ) if $rem_port;
-list_members($interface)            if $opt_list_members;
-list_configured_members($interface) if $opt_list_configured_members;
 change_primary( $interface, $opt_primary_port ) if $opt_primary_port;
 delete_mac( $interface, $delete_mac ) if $delete_mac;
