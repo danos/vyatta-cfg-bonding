@@ -1,0 +1,379 @@
+module vyatta-lacp-v1 {
+    namespace "urn:vyatta.com:mgmt:vyatta-lacp:1";
+    prefix vyatta-lacp-v1;
+
+    import vyatta-lacp-types-v1 {
+        prefix lacp;
+    }
+
+    import configd-v1 {
+        prefix configd;
+    }
+
+    import vyatta-types-v1 {
+        prefix types;
+    }
+
+    import vyatta-interfaces-v1 {
+        prefix if;
+    }
+
+    description
+        "
+        This program is free software; you can redistribute it and/or modify
+        it under the terms of the GNU General Public License version 2 as
+        published by the Free Software Foundation.
+
+        This program is distributed in the hope that it will be useful, but
+        WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+        General Public License for more details.
+
+        Date: March 2020
+
+        SPDX-License-Identifier: GPL-2.0-only
+
+        The YANG module for vyatta-lacp-v1.
+        This module provides configd infrastructure for lacp state";
+
+    revision 2020-03-29 {
+        description "Initial revision";
+    }
+
+    augment /if:interfaces {
+        container lacp-lags-state {
+            config false;
+            configd:get-state "/opt/vyatta/bin/lacp-state -j";
+            description "Operational state for LACP lags";
+
+            list lags {
+                key name;
+                leaf name {
+                    description "Interface name associated with LACP link aggregation group";
+                    type types:interface-ifname;
+                }
+                uses lacp-lag-state;
+            }
+        }
+    }
+
+    grouping lacp-lag-state {
+        leaf ether {
+            type types:mac-address;
+            description "The MAC address used for the LAG";
+        }
+
+        leaf mtu {
+            type string;
+            description "Ethernet Maximum Transmission Unit (MTU)";
+        }
+
+        leaf speed {
+            type string;
+			units "Mbits/sec";
+            description "The link speed.";
+        }
+
+        leaf duplex {
+            type enumeration {
+                enum auto {
+                    description "Auto Negotiation.";
+                }
+                enum half {
+                    description "Half Duplex";
+                }
+                enum full {
+                    description "Full Duplex";
+                }
+            }
+            description "The interface duplex mode.";
+        }
+
+        leaf up {
+            type boolean;
+            description "A boolean representing if the link state is up.";
+        }
+
+        leaf age {
+            type string;
+            description "Date at which the last interface transition occurred.";
+        }
+
+        leaf rx_packets {
+            type if:packets;
+            description "The number of recieved packets";
+        }
+
+        leaf rx_errors {
+            type if:packets;
+            description "The number of recieved errors";
+        }
+
+        leaf rx_dropped {
+            type if:packets;
+            description "The number of recieved drops";
+        }
+
+        leaf tx_packets {
+            type if:packets;
+            description "The number of transmitted packets";
+        }
+
+        leaf tx_errors {
+            type if:packets;
+            description "The number of transmit errors";
+        }
+
+        leaf tx_dropped {
+            type if:packets;
+            description "The number of transmit drops";
+        }
+
+        leaf mode {
+            description "The LACP mode used for this dataplane LAG.";
+            type string;
+        }
+
+        leaf fast_rate {
+            description "The teamd LACPDU rate timer advertised to partner";
+            type string;
+        }
+
+        leaf lacp {
+            description "Boolean for the LACP dataplane state of this LAG.";
+            type boolean;
+        }
+
+        leaf hash_alg {
+            description "The hashing algorithm used by the dataplane
+            for this LAG.";
+            type string;
+        }
+
+        leaf active {
+            description "Boolean representing if the LAG is active in the
+            dataplane.";
+            type boolean;
+        }
+
+        leaf team_mode {
+            description "The teamd team-mode for this lag";
+            type string;
+        }
+
+        leaf controller {
+            description "The teamd controller used for this lag";
+            type string;
+        }
+
+        leaf link_watch {
+            description "The teamd link_watch type used for this lag";
+            type string;
+        }
+
+        leaf-list tx_hash {
+            type string;
+            description "The teamd runner transmit hashing parameters for this
+            LACP LAG.";
+        }
+
+        leaf sys_prio {
+            type lacp:system-priority;
+            description "The teamd runner system priority for this LACP LAG.";
+        }
+
+        list slaves {
+            description "The LACP port members for this LAG.";
+            key name;
+            leaf name {
+                description "Interface name associated with LACP
+                link aggregation group";
+                type types:interface-ifname;
+            }
+            uses lacp-port-state;
+        }
+
+    }
+
+    grouping lacp-port-state {
+        leaf dp_master {
+            type types:interface-ifname;
+            description "The master dataplane interface for this LAG port.";
+        }
+
+        leaf version {
+            type lacp:lacp-version;
+            description "The LACP version used";
+        }
+
+        leaf dp_lacp {
+            type boolean;
+            description "Boolean representing if LACP is configured for
+            this port in the dataplane.";
+        }
+
+        leaf dp_active {
+            type boolean;
+            description "Boolean representing if the port is active in the
+            dataplane.";
+        }
+
+        leaf dp_primary {
+            type boolean;
+            description "Boolean representing if the port is confingured as
+            the primary port for hashing in the dataplane.";
+        }
+
+        leaf dp_actor_state {
+            type lacp:actor-state;
+            description "The summarized LACP actor state for this port
+            in the dataplane.";
+        }
+
+        leaf prio {
+            type lacp:port-priority;
+            description "The teamd runner priority.";
+        }
+
+        leaf actor_sys_prio {
+            type lacp:actor-priority;
+            description "The teamd actor system priority.";
+        }
+
+        leaf actor_sys_id {
+            type lacp:actor-system-id;
+            description "The teamd actor system id.";
+        }
+
+        leaf actor_key {
+            type lacp:actor-key;
+            description "The teamd actor key.";
+        }
+
+        leaf actor_port_prio {
+            type lacp:actor-port-priority;
+            description "The teamd actor port priority.";
+        }
+
+        leaf actor_port_id {
+            type lacp:actor-port-id;
+            description "The teamd actor port priority.";
+        }
+
+        leaf actor_state {
+            type lacp:actor-state;
+            description "The teamd summarized actor LACP port state.";
+        }
+
+        leaf dp_partner_state {
+            type lacp:partner-state;
+            description "The summarized LACP partner state for this port
+            in the dataplane.";
+        }
+
+        leaf partner_sys_prio {
+            type lacp:partner-system-priority;
+            description "The teamd partner system priority.";
+        }
+
+        leaf partner_sys_id {
+            type lacp:partner-system-id;
+            description "The teamd partner system id.";
+        }
+
+        leaf partner_key {
+            type lacp:partner-key;
+            description "The teamd partner key.";
+        }
+
+        leaf partner_port_prio {
+            type lacp:partner-port-priority;
+            description "The teamd partner port priority.";
+        }
+
+        leaf partner_port_id {
+            type lacp:partner-port-id;
+            description "The teamd partner port id.";
+        }
+
+        leaf partner_state {
+            type lacp:partner-state;
+            description "The teamd summarized LACP partner state for this
+            port.";
+        }
+
+        leaf rx_packets {
+            type if:packets;
+            description "The number of recieved packets.";
+        }
+
+        leaf rx_errors {
+            type if:packets;
+            description "The number of recieved packets with errors.";
+        }
+
+        leaf rx_dropped {
+            type if:packets;
+            description "The number of recieved packets dropped.";
+        }
+
+        leaf tx_packets {
+            type if:packets;
+            description "The number of transmitted packets.";
+        }
+
+        leaf tx_errors {
+            type if:packets;
+            description "The number of packets with transmit errors.";
+        }
+
+        leaf tx_dropped {
+            type if:packets;
+            description "The number of transmit packets dropped.";
+        }
+
+        leaf ether {
+            type types:mac-address;
+            description "The MAC address for this LAG port.";
+        }
+
+        leaf mtu {
+            type string;
+            description "The Ethernet Maximum Transmission Unit (MTU) for
+            this LAG port.";
+        }
+
+        leaf speed {
+            type string;
+			units "Mbits/sec";
+            description "The link speed.";
+        }
+
+        leaf age {
+            type string;
+            description "Date at which the last interface transition occured.";
+        }
+
+        leaf duplex {
+            type enumeration {
+                enum auto {
+                    description "Auto Negotiation.";
+                }
+                enum half {
+                    description "Half Duplex";
+                }
+                enum full {
+                    description "Full Duplex";
+                }
+            }
+            description "The interface duplex mode.";
+        }
+
+        leaf up {
+            type boolean;
+            description "A boolean representing if the link state is up.";
+        }
+
+    }
+
+}

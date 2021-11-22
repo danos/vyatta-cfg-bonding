@@ -1,0 +1,51 @@
+module vyata-op-show-lacp-v1 {
+    namespace "urn:vyatta.com:mgmt:vyatta-op-show-lacp:1";
+    prefix vyatta-op-show-lacp-v1;
+
+    import vyatta-opd-extensions-v1 {
+        prefix opd;
+    }
+
+    import vyatta-op-show-v1 {
+        prefix show;
+    }
+
+    description
+        "
+        This program is free software; you can redistribute it and/or modify
+        it under the terms of the GNU General Public License version 2 as
+        published by the Free Software Foundation.
+
+        This program is distributed in the hope that it will be useful, but
+        WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+        General Public License for more details.
+
+        Date: March 2020
+
+        SPDX-License-Identifier: GPL-2.0-only
+
+        The YANG module for vyatta-op-show-lacp-v1
+        Defines the 'lacp' node under 'show' for operational CLI";
+
+    revision 2020-03-29 {
+        description "Initial version";
+    }
+
+    opd:augment /show:show {
+        opd:command lacp {
+            opd:help "Show 802.1AX LACP information";
+
+            opd:command detail {
+                opd:help "Show detailed LACP information";
+                opd:on-enter "/opt/vyatta/bin/lacp-op --detail";
+                opd:privileged true;
+            }
+            opd:command statistics {
+                opd:help "Show LACP statistics";
+                opd:on-enter "/opt/vyatta/bin/lacp-op --stats";
+                opd:privileged true;
+            }
+        }
+    }
+}

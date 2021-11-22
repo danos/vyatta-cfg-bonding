@@ -1,0 +1,306 @@
+#!/usr/bin/python3
+"""
+Python3 module for collecting LACP state information
+"""
+import json
+import subprocess
+import os
+import datetime
+import argparse
+from vplaned import Controller
+
+__version__ = "1.0"
+__author__ = "Michael Doyle"
+__license__ = """
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2 as
+ published by the Free Software Foundation.
+
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ General Public License for more details.
+
+ Date: March 2020
+ Description: Script to display bonding information
+
+ SPDX-License-Identifier: GPL-2.0-only
+"""
+
+class GenericJSONEncoder(json.JSONEncoder):
+    """
+    A generic json Encoder
+    """
+    def default(self, obj):
+        return obj.__dict__
+
+class Interface:
+    '''A generic class for a dataplane Interface'''
+    def __init__(self, ifconfig):
+        self.name = set_iface(ifconfig, "name")
+        self.ether = set_iface(ifconfig, "ether")
+        self.mtu = set_iface(ifconfig, "mtu")
+        self.up = set_iface(ifconfig, "up")
+        self.speed = set_iface(ifconfig, "speed")
+        self.age = get_kernel(self.name, "opstate_age")
+        self.duplex = set_iface(ifconfig, "duplex")
+        self.rx_packets = set_iface(ifconfig, "rx_packets")
+        self.rx_errors = set_iface(ifconfig, "rx_errors")
+        self.rx_dropped = set_iface(ifconfig, "rx_dropped")
+        self.tx_packets = set_iface(ifconfig, "tx_packets")
+        self.tx_errors = set_iface(ifconfig, "tx_errors")
+        self.tx_dropped = set_iface(ifconfig, "tx_dropped")
+
+    def __repr__(self):
+        return "{}".format(*[self.__class__.__name__, '(', \
+                             self.name, self.ether, self.mtu, self.up, \
+                             self.speed, self.age, self.duplex, \
+                             self.rx_packets, self.rx_errors, \
+                             self.rx_dropped, self.tx_packets, \
+                             self.tx_errors, self.tx_dropped, ')'])
+
+class Lag(Interface):
+    '''An LACP Master Interface Object'''
+    def __init__(self, ifconfigs, lag):
+        '''
+        Takes as initializor a dictionary of dataplane
+        ifconfigs containing ifname as the key as well
+        as the dataplane lag dictionary
+        '''
+        # dp vars
+        Interface.__init__(self, ifconfigs[lag["ifname"]])
+        self.mode = lag["mode"]
+        self.lacp = lag["lacp"]
+        self.hash_alg = lag["hash"]
+        # team vars
+        team_config = teamdctl_caller(lag["ifname"], ["config", "dump"])
+        team_state = teamdctl_caller(lag["ifname"], ["state", "dump"])
+        self.active = team_state["runner"]["active"]
+        self.team_mode = team_state["setup"]["kernel_team_mode_name"]
+        self.controller = team_config["runner"]["controller"]
+        if "fast_rate" in team_config["runner"]:
+            self.fast_rate = team_config["runner"]["fast_rate"]
+        else:
+            self.fast_rate = False
+        self.link_watch = team_config["link_watch"]["name"]
+        self.tx_hash = team_config["runner"]["tx_hash"]
+        self.sys_prio = team_state["runner"]["sys_prio"]
+        if "ports" in team_state:
+            self.slaves = [LagPort(ifconfigs[x["ifname"]], x, self.name, \
+                                team_state["ports"][x["ifname"]]) \
+                                for x in lag["slaves"]]
+        else:
+            self.slaves = [LagPort(ifconfigs[x["ifname"]], x, self.name, "") \
+                                for x in lag["slaves"]]
+    def __repr__(self):
+        return "{}".format(*[self.__class__.__name__, '(', \
+                             Interface.__repr__(self), self.mode, self.lacp, \
+                             self.hash_alg, self.active, self.team_mode, \
+                             self.controller, self.fast_rate, self.link_watch, \
+                             self.tx_hash, self.sys_prio, self.slaves, ')'])
+
+class LagPort(Interface):
+    '''An LACP Slave Port Object'''
+    # This class represents the full port state
+    def __init__(self, ifconfig, lag, master, team):
+        # dp vars
+        Interface.__init__(self, ifconfig)
+        self.dp_active = lag['active']
+        self.dp_primary = lag['primary']
+        self.dp_master = master
+        self.version = 1
+        if "802-3ad" in lag:
+            dp_lag = lag["802-3ad"][0]
+            self.dp_lacp = True
+            self.dp_actor_state = lacp_state(dp_lag["actor-state"])
+            self.dp_partner_state = lacp_state(dp_lag["partner-state"])
+        else:
+            self.dp_lacp = False
+        # team vars
+        if isinstance(team, dict):
+            actor = team["runner"]["actor_lacpdu_info"]
+            partner = team["runner"]["partner_lacpdu_info"]
+            self.prio = team["runner"]["prio"]
+            self.actor_sys_prio = actor["system_priority"]
+            self.actor_sys_id = actor["system"]
+            self.actor_key = actor["key"]
+            self.actor_port_prio = actor["port_priority"]
+            self.actor_port_id = actor["port"]
+            self.actor_state = lacp_state(actor["state"])
+            self.partner_sys_prio = partner["system_priority"]
+            self.partner_sys_id = partner["system"]
+            self.partner_key = partner["key"]
+            self.partner_port_prio = partner["port_priority"]
+            self.partner_port_id = partner["port"]
+            self.partner_state = lacp_state(partner["state"])
+        else:
+            self.prio = 0
+            self.actor_sys_prio = 0
+            self.actor_sys_id = "00:00:00:00:00:00"
+            self.actor_key = 0
+            self.actor_port_prio = 0
+            self.actor_port_id = 0
+            self.actor_state = "--------"
+            self.partner_sys_prio = 0
+            self.partner_sys_id = "00:00:00:00:00:00"
+            self.partner_key = 0
+            self.partner_port_prio = 0
+            self.partner_port_id = 0
+            self.partner_state = "--------"
+    def __repr__(self):
+        return "{}".format(*[self.__class__.__name__, '(', \
+                             Interface.__repr__(self), self.prio, \
+                             self.version, self.dp_active, self.dp_primary, \
+                             self.dp_master, self.dp_lacp, \
+                             self.actor_sys_prio, self.actor_sys_id, \
+                             self.actor_key, self.actor_port_prio, \
+                             self.actor_port_id, self.actor_state, \
+                             self.partner_sys_prio, self.partner_sys_id, \
+                             self.partner_key, self.partner_port_prio, \
+                             self.partner_port_id, self.partner_state, \
+                             ')'])
+
+def set_iface(ifconfig, var):
+    '''
+    Set the interface variable from either the dataplane
+    or from the kernel depending on what is available
+    '''
+    use_kernel = True
+    name = ifconfig
+    if isinstance(ifconfig, dict):
+        use_kernel = False
+        name = ifconfig['name']
+    if not use_kernel:
+        # Dataplane interface information available trust it
+        if var in ifconfig:
+            if_attr = ifconfig[var]
+        elif var in ifconfig['link']:
+            if_attr = ifconfig['link'][var]
+        elif var in ifconfig['statistics']:
+            if_attr = ifconfig['statistics'][var]
+        else:
+            use_kernel = True
+    if use_kernel:
+        if_attr = get_kernel(name, var)
+    if 'ether' == var:
+        # Dataplane collapses 00 octets to 0 so use kernel address
+        if_attr = get_kernel(name, 'address')
+    return if_attr
+
+def lacp_state(state):
+    '''
+    Given an integer return the 802.3ad
+    Port state as a string where the abbreviations
+    conform to __LACP_HDR__ values
+    '''
+    port_state = list("********")
+    if state & 128:
+        port_state[0] = "E"
+    if state & 64:
+        port_state[1] = "F"
+    if state & 32:
+        port_state[2] = "D"
+    if state & 16:
+        port_state[3] = "C"
+    if state & 8:
+        port_state[4] = "S"
+    if state & 4:
+        port_state[5] = "G"
+    if state & 2:
+        port_state[6] = "s"
+    else:
+        port_state[6] = "L"
+    if state & 1:
+        port_state[7] = "A"
+    else:
+        port_state[7] = "P"
+    if state > 255:
+        port_state = "INVALID"
+    return ''.join(port_state)
+
+def get_kernel(intf, val):
+    '''
+    Get the interface value from the kernel
+    and return as a string
+    '''
+    sys_path = "/sys/class/net/"+intf+"/"
+    valid_if = False
+    if os.path.exists(sys_path):
+        valid_if = True
+    if valid_if:
+        if val in os.listdir(sys_path):
+            sys_path += val
+        elif val in os.listdir(sys_path+"statistics/"):
+            sys_path += "statistics/" + val
+        try:
+            with open(sys_path, 'r') as k:
+                kval = k.read().strip()
+            if val == 'opstate_age':
+                last_change = datetime.datetime.now() - \
+                              datetime.timedelta(seconds=float(kval))
+                kval = last_change.strftime("%A, %B %d, %Y %I:%M:%S").strip()
+        except OSError:
+            if val in ('speed', 'duplex'):
+                kval = "auto"
+            else:
+                kval = "NA"
+    else:
+        kval = "NA"
+    return kval
+
+def teamdctl_caller(intf, cmd):
+    '''
+    Call teamdctl with the commandline arguements passed
+    and return the json output
+    '''
+    teamdctl = subprocess.run(["/usr/bin/teamdctl", intf, *cmd], \
+                            check=True, stdout=subprocess.PIPE, \
+                            universal_newlines=True).stdout
+    return json.loads(teamdctl)
+
+def main():
+    '''
+    Parse input args and either run show lacp
+    details or show lacp statistics
+    '''
+    parser = argparse.ArgumentParser(description="collect lacp-state")
+    parser.add_argument("-j", "--json", action="store_true", default=False)
+    args = parser.parse_args()
+    # Form a dictionary comprehension of the dataplane
+    # ifconfig where lag['ifname'] is the key and use this
+    # to pass to class constructors for Lag class
+    dp_lags = []
+    dp_ifaces = []
+    # Get dataplane state from controller
+    with Controller() as controller:
+        for dplane in controller.get_dataplanes():
+            with dplane:
+                dp_lags.append(dplane.json_command("lag"))
+    with Controller() as controller:
+        for dplane in controller.get_dataplanes():
+            with dplane:
+                dp_ifaces.append(dplane.json_command("ifconfig"))
+    dp_ifcfgs = []
+    # Construct key-based ifconfig
+    for dp in dp_ifaces:
+        dp_ifcfgs.append({i["name"] : i for i in dp["interfaces"]})
+    lags = []
+    # Populate list of Lag type for system
+    for i, dp_slt in enumerate(dp_lags):
+        for lag in dp_slt["lag"]:
+            ifcfgs = {}
+            master_name = lag["ifname"]
+            ifcfgs[master_name] = dp_ifcfgs[i][master_name]
+            for slave in lag["slaves"]:
+                slave_name = slave["ifname"]
+                if slave_name in dp_ifcfgs[i]:
+                    ifcfgs[slave_name] = dp_ifcfgs[i][slave_name]
+                else:
+                    ifcfgs[slave_name] = slave_name
+            lags.append(Lag(ifcfgs, lag))
+    if args.json:
+        print(json.dumps({'lags' : lags}, cls=GenericJSONEncoder))
+        return
+
+if __name__ == "__main__":
+    main()
